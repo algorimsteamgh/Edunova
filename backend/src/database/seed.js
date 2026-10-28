@@ -3,10 +3,16 @@ import crypto from 'node:crypto';
 import { getDatabase } from './index.js';
 import { runMigrations } from './migrator.js';
 import { logger } from '../utils/logger.js';
+import { config } from '../config/index.js';
 import { normalizeYouTubeUrl } from '../utils/youtube.js';
 import { seedNewCourses } from './seedNewCourses.js';
 
 export async function seedDatabase(customDb = null) {
+  // Wipes enrollments, progress and audit logs and creates accounts with published passwords.
+  if (!config.seedDemoData) {
+    throw new Error('Demo seeding is disabled in production; set SEED_DEMO_DATA=true only for a throwaway demo database.');
+  }
+
   const db = customDb || getDatabase();
 
   // Run migrations first to ensure schema and video columns exist

@@ -1,0 +1,9 @@
+# Continuous SQLite replication to Cloud Storage (used when LITESTREAM_BUCKET is set).
+# Cloud Run's disk is wiped on every restart; docker-entrypoint.sh restores from this replica on start.
+dbs:
+  - path: ${DATABASE_PATH}
+    replicas:
+      - type: gcs
+        bucket: ${LITESTREAM_BUCKET}
+        path: learnsphere
+        sync-interval: 1s

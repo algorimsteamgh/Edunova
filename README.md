@@ -101,7 +101,7 @@ LearnSphere integrates genuine, verified educational YouTube video lessons into 
 
 ## 3. Default Test Credentials
 
-All accounts are pre-loaded via `npm run seed`:
+`npm run seed` (and a fresh database in development) loads these demo accounts. **They never exist in production:** the demo seed refuses to run when `NODE_ENV=production` (unless `SEED_DEMO_DATA=true`), and on startup the server deactivates any account still using one of these passwords.
 
 | Role | Email | Password | Access Capabilities |
 |---|---|---|---|
@@ -109,6 +109,8 @@ All accounts are pre-loaded via `npm run seed`:
 | **Instructor** | `elena.rostova@learnsphere.io` | `TeacherPass123!` | Curriculum authoring, syllabus management |
 | **Student (Alex)** | `alex.mercer@learnsphere.io` | `StudentPass123!` | Course catalog browsing, active enrollments, progress tracking |
 | **Student (Maria)** | `maria.santos@learnsphere.io` | `StudentPass123!` | Completed curriculum with 100% verified progress milestone |
+
+In production the first administrator comes from `ADMIN_EMAIL` and `ADMIN_PASSWORD` (12+ characters, upper, lower and digit), applied on startup when no active admin exists, or from `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run seed:admin`. `JWT_SECRET` (32+ random characters) is mandatory; the server will not start without it.
 
 ---
 
