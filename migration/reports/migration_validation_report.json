@@ -1,0 +1,102 @@
+{
+  "pipelineStatus": "PASSED",
+  "startedAt": "2026-10-13T10:05:59.434Z",
+  "sourceDatabase": "/Users/apple/Desktop/edunova-lms-modernization/legacy-app/data/legacy.sqlite",
+  "targetDatabase": "/Users/apple/Desktop/edunova-lms-modernization/backend/data/learnsphere.sqlite",
+  "sourceCounts": {
+    "legacy_users": 7,
+    "legacy_courses": 4,
+    "legacy_lessons": 6,
+    "legacy_enrollments": 5,
+    "legacy_progress": 6
+  },
+  "targetCounts": {
+    "users": 11,
+    "courses": 9,
+    "lessons": 15,
+    "enrollments": 9,
+    "lesson_progress": 11
+  },
+  "transformed": {
+    "users": {
+      "inserted": 6,
+      "rejected": 1,
+      "details": []
+    },
+    "courses": {
+      "inserted": 4,
+      "rejected": 0,
+      "details": []
+    },
+    "lessons": {
+      "inserted": 6,
+      "rejected": 0,
+      "details": []
+    },
+    "enrollments": {
+      "inserted": 4,
+      "duplicatesSkipped": 1,
+      "rejected": 0,
+      "details": []
+    },
+    "progress": {
+      "inserted": 4,
+      "rejected": 2,
+      "details": []
+    }
+  },
+  "quarantine": [
+    {
+      "entity": "user",
+      "id": "usr-bad-001",
+      "reason": "INVALID_EMAIL_FORMAT",
+      "value": "invalid-email-address"
+    },
+    {
+      "entity": "enrollment",
+      "id": "enr-002",
+      "reason": "DUPLICATE_ENROLLMENT_SKIPPED",
+      "dedupeKey": "usr-002:crs-001"
+    },
+    {
+      "entity": "progress",
+      "id": "prg-bad-orphan",
+      "reason": "ORPHANED_LESSON_REFERENCE",
+      "lessonId": "lsn-999-nonexistent"
+    },
+    {
+      "entity": "progress",
+      "id": "prg-bad-cross",
+      "reason": "CROSS_COURSE_PROGRESS_FORGERY_DETECTED",
+      "enrollmentCourseId": "crs-002",
+      "lessonCourseId": "crs-001"
+    }
+  ],
+  "validationChecks": {
+    "foreignKeyIntegrity": {
+      "status": "PASSED",
+      "violationsCount": 0,
+      "violations": []
+    },
+    "diskBTreeIntegrity": {
+      "status": "PASSED",
+      "result": [
+        {
+          "integrity_check": "ok"
+        }
+      ]
+    },
+    "crossCourseProgressIntegrity": {
+      "status": "PASSED",
+      "violationsCount": 0
+    }
+  },
+  "durationMs": 439,
+  "backup": {
+    "filePath": "/Users/apple/Desktop/edunova-lms-modernization/migration/backups/legacy_backup_1791885959441.sqlite",
+    "sha256": "746dd5cd9701a6d89853ef80cf5200d8268330c65e94cc26fe2073aa96a649ba",
+    "sizeBytes": 45056,
+    "verified": true
+  },
+  "completedAt": "2026-10-13T10:05:59.873Z"
+}

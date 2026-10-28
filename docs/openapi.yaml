@@ -1,0 +1,344 @@
+openapi: 3.0.3
+info:
+  title: LearnSphere LMS REST API
+  description: Modernized, production-grade RESTful API for the LearnSphere Learning Management System.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5001
+    description: Local development environment
+  - url: https://learnsphere-api-uc.a.run.app
+    description: Cloud Run production deployment
+
+paths:
+  /health/live:
+    get:
+      summary: Liveness probe
+      responses:
+        '200':
+          description: Service is alive
+  /health/ready:
+    get:
+      summary: Readiness probe
+      responses:
+        '200':
+          description: Service and database are ready
+        '503':
+          description: Database unreachable or corrupt
+
+  /api/v1/auth/register:
+    post:
+      summary: Register a new student account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, password]
+              properties:
+                fullName:
+                  type: string
+                  example: Alex Mercer
+                email:
+                  type: string
+                  example: alex.mercer@learnsphere.io
+                password:
+                  type: string
+                  example: SecurePass123!
+      responses:
+        '201':
+          description: Account created successfully
+        '400':
+          description: Validation error
+        '409':
+          description: Email already registered
+
+  /api/v1/auth/login:
+    post:
+      summary: Authenticate user credentials and receive JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '401':
+          description: Invalid email or password
+
+  /api/v1/auth/me:
+    get:
+      summary: Get current authenticated user profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+        '401':
+          description: Unauthorized
+
+  /api/v1/courses:
+    get:
+      summary: List courses with search, category filtering, sorting, and pagination
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [published, draft, archived, all]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 12
+      responses:
+        '200':
+          description: Paginated courses list
+    post:
+      summary: Create a new course (Admin only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, category]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                category:
+                  type: string
+                thumbnailUrl:
+                  type: string
+                status:
+                  type: string
+                  enum: [draft, published, archived]
+      responses:
+        '201':
+          description: Course created
+        '403':
+          description: Forbidden
+
+  /api/v1/courses/{id}:
+    get:
+      summary: Get course details and published syllabus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Course details
+        '404':
+          description: Course not found
+    patch:
+      summary: Update course details (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Course updated
+    delete:
+      summary: Delete or archive course (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Course deleted or archived
+
+  /api/v1/courses/{courseId}/lessons:
+    get:
+      summary: List syllabus lessons for a course
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lessons list
+    post:
+      summary: Create a lesson inside a course (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, content]
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                position:
+                  type: integer
+                status:
+                  type: string
+                  enum: [draft, published]
+      responses:
+        '201':
+          description: Lesson created
+
+  /api/v1/lessons/{id}:
+    get:
+      summary: View lesson content with adjacent navigation (Enrolled student or admin)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lesson content and navigation pointers
+        '403':
+          description: Enrollment required
+    patch:
+      summary: Update lesson content (Admin only)
+      security:
+        - BearerAuth: []
+    delete:
+      summary: Delete lesson (Admin only)
+      security:
+        - BearerAuth: []
+
+  /api/v1/courses/{courseId}/enroll:
+    post:
+      summary: Enroll current student in a published course
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Successfully enrolled
+        '409':
+          description: Already enrolled in this course
+
+  /api/v1/me/enrollments:
+    get:
+      summary: List current student's enrolled courses and dynamic progress percentages
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of active and completed enrollments
+
+  /api/v1/enrollments/{enrollmentId}/lessons/{lessonId}/progress:
+    put:
+      summary: Mark lesson complete or incomplete with cross-course validation
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: enrollmentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: lessonId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isCompleted]
+              properties:
+                isCompleted:
+                  type: boolean
+      responses:
+        '200':
+          description: Progress updated and recalculated
+        '400':
+          description: Cross-course progress forgery rejected
+        '403':
+          description: Forbidden - unauthorized enrollment owner
+
+  /api/v1/admin/users:
+    get:
+      summary: List registered platform users (Admin only)
+      security:
+        - BearerAuth: []
+  /api/v1/admin/reports/enrollments:
+    get:
+      summary: Generate enrollment reports with filters and pagination (Admin only)
+      security:
+        - BearerAuth: []
+  /api/v1/admin/reports/enrollments/csv:
+    get:
+      summary: Download sanitized CSV export of enrollment reports (Admin only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: CSV file download
+          content:
+            text/csv:
+              schema:
+                type: string
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

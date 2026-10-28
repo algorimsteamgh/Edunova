@@ -1,0 +1,46 @@
+name: Continuous Integration & Verification
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test-and-build:
+    name: Lint, Test, Migrate & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js v22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          npm --prefix backend ci
+          npm --prefix frontend ci
+          npm --prefix migration ci
+
+      - name: Apply Database Migrations
+        run: npm --prefix backend run migrate
+
+      - name: Seed Baseline Synthetic Data
+        run: npm --prefix backend run seed
+
+      - name: Run SQLite Relational Integrity Checks
+        run: npm --prefix backend run db:integrity
+
+      - name: Run Backend Automated Tests (Vitest)
+        run: npm --prefix backend test
+
+      - name: Run Migration Pipeline Tests
+        run: npm --prefix migration test
+
+      - name: Build React Production Frontend (Vite)
+        run: npm --prefix frontend run build

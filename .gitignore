@@ -1,0 +1,14 @@
+node_modules/
+.env
+dist/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+backend/backups/
+migration/backups/
+migration/temp_test_*/
+__MACOSX/
+.DS_Store
+*.log
+!legacy-app/data/legacy.sqlite
+!migration/fixtures/**

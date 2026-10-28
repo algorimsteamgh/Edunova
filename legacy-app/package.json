@@ -1,0 +1,15 @@
+{
+  "name": "learnsphere-legacy-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Legacy reference application intentionally containing legacy monolithic anti-patterns for modernization demonstration",
+  "scripts": {
+    "start": "node src/server.js",
+    "seed": "node src/generate-legacy-db.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "express": "^4.21.2"
+  }
+}
