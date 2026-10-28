@@ -20,6 +20,11 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
+          # No root package-lock.json: each package has its own
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            migration/package-lock.json
 
       - name: Install Dependencies
         run: |
