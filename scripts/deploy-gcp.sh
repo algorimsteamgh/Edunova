@@ -33,7 +33,8 @@ gcloud services enable \
   cloudbuild.googleapis.com \
   artifactregistry.googleapis.com \
   secretmanager.googleapis.com \
-  storage.googleapis.com
+  storage.googleapis.com \
+  iam.googleapis.com
 
 # 2b. Ensure Artifact Registry Docker repository exists
 echo "Step 2b: Ensuring Artifact Registry repository '${REPO_NAME}' exists..."
@@ -64,8 +65,10 @@ gcloud storage buckets describe "gs://${DB_BUCKET}" >/dev/null 2>&1 || \
 gcloud storage buckets create "gs://${DB_BUCKET}" --location="${REGION}" --uniform-bucket-level-access
 
 # 2e. Let the Cloud Run runtime service account read the secrets and write the replica
-PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)')
-RUNTIME_SA="${RUNTIME_SA:-${PROJECT_NUMBER}-compute@developer.gserviceaccount.com}"
+# A dedicated runtime identity: the default compute account may not exist and is over-privileged.
+RUNTIME_SA="${RUNTIME_SA:-learnsphere-backend@${PROJECT_ID}.iam.gserviceaccount.com}"
+gcloud iam service-accounts describe "${RUNTIME_SA}" >/dev/null 2>&1 || \
+gcloud iam service-accounts create "${RUNTIME_SA%%@*}" --display-name="LearnSphere backend runtime"
 echo "Step 2e: Granting ${RUNTIME_SA} access to secrets and the replica bucket..."
 for secret in "${JWT_SECRET_NAME}" "${ADMIN_PASSWORD_SECRET_NAME}"; do
   gcloud secrets add-iam-policy-binding "${secret}" \
@@ -133,7 +136,9 @@ gcloud run deploy "${FRONTEND_SERVICE_NAME}" \
   --allow-unauthenticated \
   --port 80 \
   --memory 256Mi \
-  --cpu 1
+  --cpu 1 \
+  --set-env-vars="BACKEND_URL=${SERVICE_URL}"
+# nginx proxies /api and /health to the backend service, so the browser stays same-origin.
 
 FRONTEND_URL=$(gcloud run services describe "${FRONTEND_SERVICE_NAME}" --platform managed --region "${REGION}" --format 'value(status.url)')
 
