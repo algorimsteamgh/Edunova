@@ -11,7 +11,7 @@ export function requireAuth(req, _res, next) {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, config.jwtSecret);
+    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
     const db = getDatabase();
     const user = db.prepare('SELECT id, full_name, email, role, is_active FROM users WHERE id = ?').get(decoded.sub);
 
@@ -42,7 +42,7 @@ export function optionalAuth(req, _res, next) {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded = jwt.verify(token, config.jwtSecret);
+    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
     const db = getDatabase();
     const user = db.prepare('SELECT id, full_name, email, role, is_active FROM users WHERE id = ?').get(decoded.sub);
     req.user = user && user.is_active ? user : null;

@@ -77,8 +77,12 @@ graph TD
 |---|---|---|
 | `NODE_ENV` | Runtime mode | `production` |
 | `PORT` | HTTP port | `8080` (Cloud Run default) |
-| `DATABASE_PATH` | Path to SQLite file | Persistent volume path e.g. `/mnt/data/learnsphere.sqlite` |
-| `JWT_SECRET` | Token signing secret | 64+ char random hex string stored in GCP Secret Manager |
+| `DATABASE_PATH` | Path to SQLite file | `/app/data/learnsphere.sqlite` (set in the image) |
+| `JWT_SECRET` | Token signing secret | **Required.** 32+ random characters from Secret Manager; startup fails if missing, short, or a value published in this repo |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | First administrator | Created on startup only when no active admin exists; password from Secret Manager, 12+ chars |
+| `LITESTREAM_BUCKET` | SQLite replica bucket | **Required on Cloud Run.** The entrypoint restores from and continuously replicates to this GCS bucket; run with `--max-instances 1` |
+| `SEED_DEMO_DATA` | Demo accounts and enrollments | Leave unset (`false` in production). `true` only for a throwaway demo |
+| `ALLOW_EPHEMERAL_DB` | Opt out of the Cloud Run storage check | Leave unset; `true` accepts losing all data on restart |
 | `JWT_EXPIRES_IN` | Token duration | `1h` |
 | `CORS_ORIGIN` | Allowed web origin | Fully qualified domain e.g. `https://learnsphere.example.com` |
 | `RATE_LIMIT_WINDOW_MS` | Rate limit duration | `900000` (15 mins) |

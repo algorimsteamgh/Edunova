@@ -66,7 +66,7 @@ export class AuthService {
         role: user.role,
       },
       config.jwtSecret,
-      { expiresIn: config.jwtExpiresIn }
+      { algorithm: 'HS256', expiresIn: config.jwtExpiresIn }
     );
   }
 

@@ -10,7 +10,12 @@ services:
       - NODE_ENV=production
       - PORT=8080
       - DATABASE_PATH=/app/data/learnsphere.sqlite
-      - JWT_SECRET=learnsphere-production-docker-compose-secret-key-2026
+      # Secrets come from your shell or a local .env file (see .env.example); compose refuses to start without one.
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET (openssl rand -base64 48) in .env}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      # true loads demo accounts with published passwords; only for a throwaway local demo.
+      - SEED_DEMO_DATA=${SEED_DEMO_DATA:-false}
       - CORS_ORIGIN=*
     volumes:
       - ./backend/data:/app/data
