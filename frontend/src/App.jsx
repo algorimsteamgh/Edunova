@@ -5,15 +5,20 @@ import AppLayout from './layouts/AppLayout';
 import { RequireAuth, RequireRole } from './components/ProtectedRoute';
 
 // Pages
+import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import CourseCatalog from './pages/CourseCatalog';
 import CourseDetails from './pages/CourseDetails';
 import CoursePlayer from './pages/CoursePlayer';
+import Roadmaps from './pages/Roadmaps';
+import RoadmapView from './pages/RoadmapView';
+import TopicLearningView from './pages/TopicLearningView';
 import LessonViewer from './pages/LessonViewer';
 import MyLearning from './pages/MyLearning';
 import ProgressDetails from './pages/ProgressDetails';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminRoadmapManagement from './pages/AdminRoadmapManagement';
 import CourseManagement from './pages/CourseManagement';
 import LessonManagement from './pages/LessonManagement';
 import UserList from './pages/UserList';
@@ -27,14 +32,70 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<AppLayout />}>
-            {/* Public and Catalog */}
-            <Route path="/" element={<Navigate to="/courses" replace />} />
+            {/* Public Authentication Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/courses" element={<CourseCatalog />} />
-            <Route path="/courses/:id" element={<CourseDetails />} />
-            <Route path="/roadmaps" element={<Navigate to="/courses" replace />} />
-            <Route path="/roadmaps/*" element={<Navigate to="/courses" replace />} />
+
+            {/* Root Route: strictly protected Home page. If authenticated, renders Home page; if unauthenticated, RequireAuth redirects to /login */}
+            <Route
+              path="/"
+              element={
+                <RequireAuth>
+                  <Home />
+                </RequireAuth>
+              }
+            />
+
+            {/* Protected Courses & Dashboard */}
+            <Route
+              path="/courses"
+              element={
+                <RequireAuth>
+                  <CourseCatalog />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/courses/:id"
+              element={
+                <RequireAuth>
+                  <CourseDetails />
+                </RequireAuth>
+              }
+            />
+            {/* Roadmaps & Career Paths (roadmap.sh style) */}
+            <Route
+              path="/roadmaps"
+              element={
+                <RequireAuth>
+                  <Roadmaps />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/roadmaps/:idOrSlug"
+              element={
+                <RequireAuth>
+                  <RoadmapView />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/roadmaps/:roadmapId/topics/:topicId"
+              element={
+                <RequireAuth>
+                  <TopicLearningView />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/roadmaps/topics/:topicId"
+              element={
+                <RequireAuth>
+                  <TopicLearningView />
+                </RequireAuth>
+              }
+            />
 
             {/* Authenticated Student Learning Routes */}
             <Route
@@ -70,9 +131,55 @@ export default function App() {
               }
             />
 
-            {/* Admin Dashboard is hidden: redirect /admin to courses */}
-            <Route path="/admin" element={<Navigate to="/courses" replace />} />
-            <Route path="/admin/*" element={<Navigate to="/courses" replace />} />
+            {/* Admin Portal (Protected for Admin role) */}
+            <Route
+              path="/admin"
+              element={
+                <RequireRole role="admin">
+                  <AdminDashboard />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/roadmaps"
+              element={
+                <RequireRole role="admin">
+                  <AdminRoadmapManagement />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/courses"
+              element={
+                <RequireRole role="admin">
+                  <CourseManagement />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/lessons"
+              element={
+                <RequireRole role="admin">
+                  <LessonManagement />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <RequireRole role="admin">
+                  <UserList />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/admin/reports"
+              element={
+                <RequireRole role="admin">
+                  <Reports />
+                </RequireRole>
+              }
+            />
 
             {/* Errors */}
             <Route path="/unauthorized" element={<Unauthorized />} />

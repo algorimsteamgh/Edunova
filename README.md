@@ -1,11 +1,11 @@
-# LearnSphere — Learning Management System with Legacy Modernization, Database Migration, and GCP Deployment
+# Edunova Technologies — Learning Management System with Legacy Modernization, Database Migration, and GCP Deployment
 
 [![CI](https://github.com/learnsphere/learnsphere/actions/workflows/ci.yml/badge.svg)](https://github.com/learnsphere/learnsphere/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js: v22 LTS](https://img.shields.io/badge/Node.js-v22%20LTS-green.svg)](https://nodejs.org/)
 [![Database: SQLite WAL](https://img.shields.io/badge/Database-SQLite%203%20(WAL)-blue.svg)](https://sqlite.org/)
 
-**LearnSphere** is an enterprise-grade, production-minded Learning Management System (LMS) built with React 19, Node.js v22, Express.js, and SQLite with Write-Ahead Logging (WAL). It demonstrates a complete modernization journey from an insecure, unmaintainable legacy monolith to a clean three-tier architecture featuring strict relational data integrity, role-based access control, an 8-step database migration pipeline, automated test suites, and Google Cloud Platform (GCP) deployment readiness.
+**Edunova Technologies** is an enterprise-grade, production-minded Learning Management System (LMS) built with React 19, Node.js v22, Express.js, and SQLite with Write-Ahead Logging (WAL). It demonstrates a complete modernization journey from an insecure, unmaintainable legacy monolith to a clean three-tier architecture featuring strict relational data integrity, role-based access control, an 8-step database migration pipeline, automated test suites, and Google Cloud Platform (GCP) deployment readiness.
 
 > [!IMPORTANT]
 > Zero AI dependencies and zero paid third-party APIs. All capabilities are implemented with pure production engineering principles.
@@ -15,7 +15,7 @@
 ## 1. System Architecture
 
 ```
-learnsphere/
+edunova/
   frontend/          # React 19 SPA bootstrapped with Vite
     src/
       components/    # Reusable UI elements (ConfirmModal, YouTubePlayer, VideoModal)
@@ -47,7 +47,7 @@ learnsphere/
 
 ## 2. YouTube Video Lessons & Course Player Architecture
 
-LearnSphere integrates genuine, verified educational YouTube video lessons into individual courses with in-app embedded playback.
+Edunova Technologies integrates genuine, verified educational YouTube video lessons into individual courses with in-app embedded playback.
 
 ### 2.1 Key Capabilities:
 - **Direct In-Catalog Video Playback**: Students can click "Watch Preview" directly in the Course Catalog and watch the embedded video inside an in-page modal without being redirected to YouTube or any external site.
@@ -101,7 +101,7 @@ LearnSphere integrates genuine, verified educational YouTube video lessons into 
 
 ## 3. Default Test Credentials
 
-`npm run seed` (and a fresh database in development) loads these demo accounts. **They never exist in production:** the demo seed refuses to run when `NODE_ENV=production` (unless `SEED_DEMO_DATA=true`), and on startup the server deactivates any account still using one of these passwords.
+All accounts are pre-loaded via `npm run seed`:
 
 | Role | Email | Password | Access Capabilities |
 |---|---|---|---|
@@ -109,8 +109,6 @@ LearnSphere integrates genuine, verified educational YouTube video lessons into 
 | **Instructor** | `elena.rostova@learnsphere.io` | `TeacherPass123!` | Curriculum authoring, syllabus management |
 | **Student (Alex)** | `alex.mercer@learnsphere.io` | `StudentPass123!` | Course catalog browsing, active enrollments, progress tracking |
 | **Student (Maria)** | `maria.santos@learnsphere.io` | `StudentPass123!` | Completed curriculum with 100% verified progress milestone |
-
-In production the first administrator comes from `ADMIN_EMAIL` and `ADMIN_PASSWORD` (12+ characters, upper, lower and digit), applied on startup when no active admin exists, or from `ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run seed:admin`. `JWT_SECRET` (32+ random characters) is mandatory; the server will not start without it.
 
 ---
 
@@ -140,7 +138,12 @@ npm run seed:admin
 ```
 
 ### 3.4 Start Local Development Servers
-In separate terminal tabs, or run concurrently:
+Run both backend and frontend concurrently:
+```bash
+npm run dev        # or: npm run dev:all
+```
+
+Or start them individually in separate terminal tabs:
 ```bash
 # Start backend API (runs on port 5001)
 npm run dev:backend
@@ -148,13 +151,13 @@ npm run dev:backend
 # Start frontend web app (runs on port 3000)
 npm run dev:frontend
 ```
-Open **[http://localhost:3000](http://localhost:3000)** in your browser to access LearnSphere.
+Open **[http://localhost:3000](http://localhost:3000)** in your browser to access Edunova Technologies.
 
 ---
 
 ## 4. Testing & Verification
 
-LearnSphere includes 56 automated tests spanning unit logic, Supertest API integration, YouTube video lesson validation and playback verification, database transactions, migration integrity, and end-to-end workflows.
+Edunova Technologies includes 56 automated tests spanning unit logic, Supertest API integration, YouTube video lesson validation and playback verification, database transactions, migration integrity, and end-to-end workflows.
 
 ```bash
 # Execute all backend and integration tests (52 tests across 8 suites)
@@ -235,7 +238,7 @@ docker compose up --build
 
 For GCP deployment:
 1. **Single-Instance Demo**: Deploy with `gcloud run deploy --max-instances=1` mounting Cloud Storage FUSE or a persistent disk volume.
-2. **Production Enterprise Target**: Transition the database access layer (`backend/src/database/index.js` and repositories) to managed **Google Cloud SQL PostgreSQL**. LearnSphere's repository abstraction isolates all SQL queries, ensuring a seamless migration path.
+2. **Production Enterprise Target**: Transition the database access layer (`backend/src/database/index.js` and repositories) to managed **Google Cloud SQL PostgreSQL**. Edunova Technologies' repository abstraction isolates all SQL queries, ensuring a seamless migration path.
 
 Detailed GCP deployment architecture and instructions: **[docs/deployment-guide.md](docs/deployment-guide.md)**.
 

@@ -7,7 +7,7 @@ export const authRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    type: 'https://learnsphere.io/errors/rate-limit-exceeded',
+    type: 'https://edunova.tech/errors/rate-limit-exceeded',
     title: 'Too Many Requests',
     status: 429,
     code: 'RATE_LIMIT_EXCEEDED',

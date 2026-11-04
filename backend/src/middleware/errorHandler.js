@@ -12,7 +12,7 @@ export function errorHandler(err, req, res, _next) {
   if (err.name === 'SqliteError') {
     if (err.message.includes('FOREIGN KEY constraint failed')) {
       return res.status(400).json({
-        type: 'https://learnsphere.io/errors/foreign-key-violation',
+        type: 'https://edunova.tech/errors/foreign-key-violation',
         title: 'Foreign Key Violation',
         status: 400,
         code: 'FOREIGN_KEY_VIOLATION',
@@ -22,7 +22,7 @@ export function errorHandler(err, req, res, _next) {
     }
     if (err.message.includes('UNIQUE constraint failed')) {
       return res.status(409).json({
-        type: 'https://learnsphere.io/errors/unique-constraint-violation',
+        type: 'https://edunova.tech/errors/unique-constraint-violation',
         title: 'Unique Constraint Violation',
         status: 409,
         code: 'DUPLICATE_RECORD',
@@ -33,7 +33,7 @@ export function errorHandler(err, req, res, _next) {
   }
 
   const response = {
-    type: `https://learnsphere.io/errors/${code.toLowerCase().replace(/_/g, '-')}`,
+    type: `https://edunova.tech/errors/${code.toLowerCase().replace(/_/g, '-')}`,
     title: err.name || 'Error',
     status: statusCode,
     code,

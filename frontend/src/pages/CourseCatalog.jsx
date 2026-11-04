@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { courseApi, enrollmentApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import VideoModal from '../components/VideoModal';
 import {
   Search,
   BookOpen,
@@ -12,9 +11,9 @@ import {
   ChevronRight,
   Play,
   Clock,
-  Youtube,
   CheckCircle2,
   Sparkles,
+  Award,
 } from 'lucide-react';
 
 const FEATURED_CHANNELS = [
@@ -31,10 +30,11 @@ const FEATURED_CHANNELS = [
 export default function CourseCatalog() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [courses, setCourses] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [selectedChannel, setSelectedChannel] = useState('');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
@@ -42,6 +42,15 @@ export default function CourseCatalog() {
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [userEnrollments, setUserEnrollments] = useState({});
+
+  // Sync category if URL search query changes
+  useEffect(() => {
+    const cat = searchParams.get('category') || '';
+    if (cat !== selectedCategory) {
+      setSelectedCategory(cat);
+      setPage(1);
+    }
+  }, [searchParams]);
 
   // Active in-catalog embedded video player modal
   const [activeModalVideo, setActiveModalVideo] = useState(null);
@@ -96,24 +105,17 @@ export default function CourseCatalog() {
 
     setActiveModalVideo({
       videoId: course.preview_video_id || 'bMknfKXIFA8',
-      title: `${course.title} — Course Video Preview`,
+      title: `${course.title} — Course Preview`,
       courseTitle: course.title,
       courseId: course.id,
       description: course.description,
-      channelName: 'Verified YouTube Educator',
+      channelName: course.instructor_name || 'Staff Instructor',
       duration: course.estimated_duration || 'Full Course',
     });
   };
 
   return (
     <div className="container page-container">
-      {/* Embedded Video Modal: Plays directly inside Course Catalog without redirect */}
-      <VideoModal
-        isOpen={Boolean(activeModalVideo)}
-        onClose={() => setActiveModalVideo(null)}
-        videoData={activeModalVideo}
-      />
-
       {/* Hero Header */}
       <div style={{ textAlign: 'center', maxWidth: '780px', margin: '0 auto 2.5rem' }}>
         <div
@@ -131,13 +133,13 @@ export default function CourseCatalog() {
             marginBottom: '1rem',
           }}
         >
-          <Youtube size={16} /> Curated YouTube Video Lessons Embedded In-App
+          <BookOpen size={16} /> Structured Learning Paths & Curriculums
         </div>
         <h1 className="page-title" style={{ fontSize: '2.6rem', marginBottom: '0.75rem', letterSpacing: '-0.03em' }}>
-          Explore Verified Technical Courses
+          Browse Courses
         </h1>
         <p className="page-subtitle" style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          Master modernized engineering practices from full-stack React and Node architectures to database internals and cloud-native systems. Watch verified YouTube video tutorials directly inside LearnSphere.
+          Explore structured learning paths, comprehensive course materials, and practical learning resources designed to help you develop new skills and track your learning progress.
         </p>
       </div>
 
@@ -154,7 +156,7 @@ export default function CourseCatalog() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
           <Sparkles size={16} color="var(--primary)" />
           <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-main)' }}>
-            Curated Top YouTube Engineering Channels by Topic:
+            Featured Engineering Disciplines & Lead Instructors:
           </span>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -184,7 +186,7 @@ export default function CourseCatalog() {
                   padding: '0.35rem 0.75rem',
                 }}
               >
-                <Youtube size={13} />
+                <Award size={13} />
                 <strong>{ch.name}</strong>
                 <span style={{ opacity: 0.75, fontSize: '0.75rem' }}>• {ch.tag}</span>
               </button>
@@ -358,10 +360,9 @@ export default function CourseCatalog() {
                     </span>
                   )}
 
-                  {/* Direct Watch Preview Overlay Button */}
-                  <button
-                    type="button"
-                    onClick={(e) => handleWatchPreview(e, course)}
+                  {/* Direct Curriculum Overview Button */}
+                  <Link
+                    to={`/courses/${course.id}`}
                     className="btn btn-primary"
                     style={{
                       position: 'absolute',
@@ -373,11 +374,12 @@ export default function CourseCatalog() {
                       borderRadius: '9999px',
                       boxShadow: '0 8px 20px rgba(0, 0, 0, 0.6)',
                       zIndex: 2,
+                      textDecoration: 'none',
                     }}
-                    title="Play embedded YouTube video preview inside this catalog"
+                    title="View course curriculum"
                   >
-                    <Play size={16} fill="white" /> Watch Preview
-                  </button>
+                    <BookOpen size={16} /> View Curriculum
+                  </Link>
                 </div>
 
                 {/* Course Title */}
@@ -424,7 +426,7 @@ export default function CourseCatalog() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <BookOpen size={14} color="var(--primary)" />
-                    <span>{course.published_lessons_count || 0} Video Lessons</span>
+                    <span>{course.published_lessons_count || 0} Lessons</span>
                   </div>
 
                   {course.estimated_duration && (

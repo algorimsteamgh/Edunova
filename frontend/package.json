@@ -1,6 +1,7 @@
 {
-  "name": "learnsphere-frontend",
+  "name": "edunova-frontend",
   "version": "1.0.0",
+  "description": "Edunova Technologies — Modern Learning Management System Frontend",
   "private": true,
   "type": "module",
   "scripts": {

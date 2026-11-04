@@ -1,6 +1,7 @@
 {
-  "name": "learnsphere-backend",
+  "name": "edunova-backend",
   "version": "1.0.0",
+  "description": "Edunova Technologies — Modern Learning Management System Backend API",
   "private": true,
   "type": "module",
   "main": "src/server.js",

@@ -1,4 +1,4 @@
-# LearnSphere Operations & Site Reliability Runbook
+# Edunova Technologies Operations & Site Reliability Runbook
 
 ## 1. Routine Database Maintenance
 
@@ -80,5 +80,5 @@ npm run db:backup
      ```bash
      sqlite3 /mnt/data/learnsphere.sqlite "SELECT * FROM schema_migrations ORDER BY applied_at DESC;"
      ```
-  2. Because all LearnSphere migrations run inside atomic transactions, a failed migration automatically rolls back cleanly without leaving partial tables.
+  2. Because all Edunova Technologies migrations run inside atomic transactions, a failed migration automatically rolls back cleanly without leaving partial tables.
   3. Correct the SQL script syntax error in `backend/migrations/` and restart the service.

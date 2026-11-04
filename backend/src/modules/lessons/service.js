@@ -96,6 +96,9 @@ export class LessonService {
 
     const embedUrl = lesson.video_id ? getYouTubeEmbedUrl(lesson.video_id) : '';
 
+    const db = getDatabase();
+    const videoResources = db.prepare('SELECT * FROM topic_video_resources WHERE lesson_id = ? ORDER BY is_primary DESC, created_at ASC').all(lesson.id);
+
     return {
       lesson: {
         ...lesson,
@@ -107,6 +110,7 @@ export class LessonService {
         practicalExercise: lesson.practical_exercise || '',
         referenceUrls: typeof lesson.reference_urls === 'string' ? JSON.parse(lesson.reference_urls || '[]') : (lesson.reference_urls || []),
         embed_url: embedUrl,
+        videoResources,
       },
       course: {
         id: course.id,

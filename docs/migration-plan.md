@@ -2,7 +2,7 @@
 
 ## 1. Migration Protocol Overview
 
-This document outlines the rigorous, repeatable 8-step migration pipeline executed to transform legacy LMS database instances into the normalized, relational LearnSphere target database.
+This document outlines the rigorous, repeatable 8-step migration pipeline executed to transform legacy LMS database instances into the normalized, relational Edunova Technologies target database.
 
 ```mermaid
 flowchart TD

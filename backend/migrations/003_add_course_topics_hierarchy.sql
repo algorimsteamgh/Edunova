@@ -1,5 +1,5 @@
 -- ==========================================================
--- LearnSphere Migration: 003_add_course_topics_hierarchy.sql
+-- Edunova Technologies Migration: 003_add_course_topics_hierarchy.sql
 -- Add course difficulty, objectives, and lesson topic/subtopic hierarchy
 -- ==========================================================
 

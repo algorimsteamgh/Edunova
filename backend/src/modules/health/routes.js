@@ -7,7 +7,7 @@ router.get('/live', (_req, res) => {
   res.status(200).json({
     status: 'UP',
     timestamp: new Date().toISOString(),
-    service: 'learnsphere-api',
+    service: 'edunova-api',
   });
 });
 

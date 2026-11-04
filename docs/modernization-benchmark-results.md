@@ -8,7 +8,7 @@
 
 ## 1. Measured Query Latency Comparison
 
-| Benchmark Operation | Legacy Database (Unindexed) | Modernized LearnSphere (WAL + Indexes) | Relative Latency |
+| Benchmark Operation | Legacy Database (Unindexed) | Modernized Edunova Technologies (WAL + Indexes) | Relative Latency |
 |---|---|---|---|
 | **Course Syllabus & Lesson Query** | `0.0974 ms` | `0.0865 ms` | Indexed query execution |
 | **Progress Verification & Aggregation** | `0.0376 ms` | `0.0394 ms` | Compound indexed join |
@@ -17,7 +17,7 @@
 
 ## 2. Measured Relational Integrity & Security Comparison
 
-| Architectural Dimension | Legacy Implementation | Modernized LearnSphere | Measured Impact |
+| Architectural Dimension | Legacy Implementation | Modernized Edunova Technologies | Measured Impact |
 |---|---|---|---|
 | **Foreign Key Enforcement** | Disabled (`PRAGMA foreign_keys = OFF`) | Enabled (`PRAGMA foreign_keys = ON`) | **0 foreign key violations** vs. **1 orphaned records in legacy** |
 | **Password Hashing** | Unsalted MD5 (`d41d8cd98f00...`) | Salted Bcrypt (Cost 10/12) | Eliminates rainbow table vulnerability |
