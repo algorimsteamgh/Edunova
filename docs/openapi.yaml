@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: LearnSphere LMS REST API
-  description: Modernized, production-grade RESTful API for the LearnSphere Learning Management System.
+  title: Edunova Technologies LMS REST API
+  description: Modernized, production-grade RESTful API for the Edunova Technologies Learning Management System.
   version: 1.0.0
 servers:
   - url: http://localhost:5001

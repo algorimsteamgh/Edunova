@@ -10,7 +10,7 @@ const api = axios.create({
 // Request Interceptor: Inject Auth Token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('learnsphere_token');
+    const token = localStorage.getItem('edunova_token') || localStorage.getItem('learnsphere_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -25,7 +25,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response) {
       if (error.response.status === 401 && !window.location.pathname.includes('/login')) {
+        localStorage.removeItem('edunova_token');
         localStorage.removeItem('learnsphere_token');
+        localStorage.removeItem('edunova_user');
         localStorage.removeItem('learnsphere_user');
       }
       const data = error.response.data;
@@ -75,6 +77,44 @@ export const progressApi = {
   updateProgress: (enrollmentId, lessonId, isCompleted) =>
     api.put(`/enrollments/${enrollmentId}/lessons/${lessonId}/progress`, { isCompleted }),
   getProgress: (enrollmentId) => api.get(`/enrollments/${enrollmentId}/progress`),
+};
+
+// Roadmaps Endpoints (roadmap.sh style)
+export const roadmapApi = {
+  list: (params) => api.get('/roadmaps', { params }),
+  getByIdOrSlug: (idOrSlug) => api.get(`/roadmaps/${idOrSlug}`),
+  getTopicDetails: (topicId) => api.get(`/roadmaps/topics/${topicId}`),
+  getRoadmapTopicDetails: (roadmapId, topicId) => api.get(`/roadmaps/${roadmapId}/topics/${topicId}`),
+  enroll: (id) => api.post(`/roadmaps/${id}/enroll`),
+  updateTopicProgress: (topicId, status) => api.post(`/roadmaps/topics/${topicId}/progress`, { status }),
+  updateVideoProgress: (topicId) => api.post(`/roadmaps/topics/${topicId}/video-progress`),
+  getMyRoadmaps: () => api.get('/roadmaps/my/enrolled'),
+  getStudentDashboard: () => api.get('/roadmaps/student/dashboard'),
+  searchGlobal: (params) => api.get('/roadmaps/search/global', { params }),
+
+  // Admin Roadmap Content Management
+  adminCreateRoadmap: (data) => api.post('/roadmaps/admin/create', data),
+  adminUpdateRoadmap: (id, data) => api.put(`/roadmaps/admin/${id}`, data),
+  adminDeleteRoadmap: (id) => api.delete(`/roadmaps/admin/${id}`),
+  adminCreateModule: (roadmapId, data) => api.post(`/roadmaps/admin/${roadmapId}/modules`, data),
+  adminUpdateModule: (id, data) => api.put(`/roadmaps/admin/modules/${id}`, data),
+  adminDeleteModule: (id) => api.delete(`/roadmaps/admin/modules/${id}`),
+  adminCreateTopic: (roadmapId, data) => api.post(`/roadmaps/admin/${roadmapId}/topics`, data),
+  adminUpdateTopic: (id, data) => api.put(`/roadmaps/admin/topics/${id}`, data),
+  adminDeleteTopic: (id) => api.delete(`/roadmaps/admin/topics/${id}`),
+  adminGetMissingResources: () => api.get('/roadmaps/admin/missing-resources'),
+};
+
+// Quizzes & Assessments Endpoints
+export const quizApi = {
+  getByLesson: (lessonId) => api.get(`/lessons/${lessonId}/quiz`),
+  submit: (quizId, answers) => api.post(`/quizzes/${quizId}/submit`, { answers }),
+};
+
+// Bookmarks Endpoints
+export const bookmarkApi = {
+  toggle: (lessonId, notes = '') => api.post(`/lessons/${lessonId}/bookmark`, { notes }),
+  getMyBookmarks: () => api.get('/my/bookmarks'),
 };
 
 // Admin Endpoints

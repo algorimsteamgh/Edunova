@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { courseApi, enrollmentApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import VideoModal from '../components/VideoModal';
 import {
   BookOpen,
   User,
@@ -13,7 +12,6 @@ import {
   AlertCircle,
   Play,
   Clock,
-  Youtube,
   Sparkles,
 } from 'lucide-react';
 
@@ -27,9 +25,6 @@ export default function CourseDetails() {
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  // Active in-page embedded video player modal
-  const [activeModalVideo, setActiveModalVideo] = useState(null);
 
   const fetchCourse = () => {
     setLoading(true);
@@ -102,7 +97,7 @@ export default function CourseDetails() {
       courseTitle: course.title,
       courseId: course.id,
       description: lesson.description || lesson.content,
-      channelName: lesson.channel_name || 'Verified YouTube Educator',
+      channelName: lesson.channel_name || 'Staff Instructor',
       duration: lesson.duration || '',
     });
   };
@@ -115,20 +110,13 @@ export default function CourseDetails() {
       courseTitle: course.title,
       courseId: course.id,
       description: course.description,
-      channelName: (firstPreview && firstPreview.channel_name) || 'LearnSphere Engineering',
+      channelName: (firstPreview && firstPreview.channel_name) || 'Edunova Technologies Engineering',
       duration: course.estimated_duration || 'Full Course',
     });
   };
 
   return (
     <div className="container page-container">
-      {/* Direct In-Page Embedded Video Player Modal */}
-      <VideoModal
-        isOpen={Boolean(activeModalVideo)}
-        onClose={() => setActiveModalVideo(null)}
-        videoData={activeModalVideo}
-      />
-
       {/* Notifications */}
       {error && (
         <div className="alert alert-error" style={{ marginBottom: '1.5rem' }}>
@@ -342,7 +330,7 @@ export default function CourseDetails() {
       <div className="card">
         <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ fontSize: '1.4rem' }}>Curriculum Modules & YouTube Video Lessons</h2>
+            <h2 style={{ fontSize: '1.4rem' }}>Curriculum Modules & Structured Lessons</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
               Structured hierarchy: Course → Topics → Subtopics → Lessons → Videos & Exercises
             </p>
@@ -435,7 +423,6 @@ export default function CourseDetails() {
                     {group.lessons.map((lesson) => {
                       const canAccess = isEnrolled || isAdmin || Boolean(lesson.is_preview);
                       const exercise = lesson.practicalExercise || lesson.practical_exercise;
-                      const refUrls = lesson.referenceUrls || (typeof lesson.reference_urls === 'string' ? JSON.parse(lesson.reference_urls || '[]') : (lesson.reference_urls || []));
 
                       return (
                         <div
@@ -499,7 +486,7 @@ export default function CourseDetails() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.78rem', color: 'var(--text-dim)', marginTop: '0.2rem', flexWrap: 'wrap' }}>
                                 {lesson.channel_name && (
                                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--text-muted)' }}>
-                                    <Youtube size={12} color="var(--primary)" /> {lesson.channel_name}
+                                    <User size={12} color="var(--primary)" /> {lesson.channel_name}
                                   </span>
                                 )}
                                 {lesson.duration && (
@@ -510,11 +497,6 @@ export default function CourseDetails() {
                                 {exercise && (
                                   <span style={{ color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
                                     Hands-on Lab
-                                  </span>
-                                )}
-                                {refUrls && refUrls.length > 0 && (
-                                  <span style={{ color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
-                                    {refUrls.length} Docs
                                   </span>
                                 )}
                               </div>

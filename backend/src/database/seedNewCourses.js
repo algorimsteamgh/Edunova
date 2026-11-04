@@ -1824,7 +1824,7 @@ Every running program on a Linux machine is represented as a process with a uniq
 Systemd is the default init system (PID 1) on modern Linux distributions:
 \`\`\`ini
 [Unit]
-Description=LearnSphere LMS Backend Service
+Description=Edunova Technologies LMS Backend Service
 After=network.target
 
 [Service]

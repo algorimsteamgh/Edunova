@@ -172,9 +172,22 @@ export default function LessonViewer() {
             videoUrl={lesson.video_url}
             title={lesson.title}
             description={lesson.description}
-            channelName={lesson.channel_name}
+            channelName={lesson.channel_name || 'Edunova Technologies Faculty'}
             duration={lesson.duration}
-            autoplay={false}
+            courseTitle={course?.title}
+            topicTitle={lesson.topic_title || lesson.topicTitle}
+            prevLesson={navigation.prevLessonId ? { title: navigation.prevLessonTitle } : null}
+            nextLesson={navigation.nextLessonId ? { title: navigation.nextLessonTitle } : null}
+            onPrevLesson={navigation.prevLessonId ? () => navigate(`/lessons/${navigation.prevLessonId}`) : null}
+            onNextLesson={navigation.nextLessonId ? () => navigate(`/lessons/${navigation.nextLessonId}`) : null}
+            isCompleted={isCompleted}
+            onToggleComplete={enrollmentId ? handleToggleComplete : null}
+            updatingProgress={updating}
+            onEnded={() => {
+              if (!isCompleted && enrollmentId) {
+                handleToggleComplete();
+              }
+            }}
           />
         </div>
 

@@ -15,7 +15,7 @@ Cloud Run is designed to scale horizontally across multiple container instances 
 
 ---
 
-## 2. Cloud Architecture Options for LearnSphere
+## 2. Cloud Architecture Options for Edunova Technologies
 
 ```mermaid
 graph TD
@@ -51,7 +51,7 @@ graph TD
 - **Frontend**: Built static assets (`dist/`) hosted on Google Cloud Storage and distributed globally via Google Cloud CDN, or served via lightweight NGINX container.
 - **Backend**: Containerized Express REST API deployed on Google Cloud Run with autoscaling enabled ($0 \rightarrow N$ instances).
 - **Database**: Google Cloud SQL (PostgreSQL 16) with automated backups, point-in-time recovery, and connection pooling.
-- **Data Access Layer Transition**: LearnSphere's repository layer (`backend/src/modules/*/repository.js`) strictly separates SQL execution from business services. Swapping `better-sqlite3` for `pg` / `knex` requires changing only the database connection pool and parameter placeholders (`?` $\rightarrow$ `$1, $2`).
+- **Data Access Layer Transition**: Edunova Technologies' repository layer (`backend/src/modules/*/repository.js`) strictly separates SQL execution from business services. Swapping `better-sqlite3` for `pg` / `knex` requires changing only the database connection pool and parameter placeholders (`?` $\rightarrow$ `$1, $2`).
 
 ---
 
@@ -77,12 +77,8 @@ graph TD
 |---|---|---|
 | `NODE_ENV` | Runtime mode | `production` |
 | `PORT` | HTTP port | `8080` (Cloud Run default) |
-| `DATABASE_PATH` | Path to SQLite file | `/app/data/learnsphere.sqlite` (set in the image) |
-| `JWT_SECRET` | Token signing secret | **Required.** 32+ random characters from Secret Manager; startup fails if missing, short, or a value published in this repo |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | First administrator | Created on startup only when no active admin exists; password from Secret Manager, 12+ chars |
-| `LITESTREAM_BUCKET` | SQLite replica bucket | **Required on Cloud Run.** The entrypoint restores from and continuously replicates to this GCS bucket; run with `--max-instances 1` |
-| `SEED_DEMO_DATA` | Demo accounts and enrollments | Leave unset (`false` in production). `true` only for a throwaway demo |
-| `ALLOW_EPHEMERAL_DB` | Opt out of the Cloud Run storage check | Leave unset; `true` accepts losing all data on restart |
+| `DATABASE_PATH` | Path to SQLite file | Persistent volume path e.g. `/mnt/data/learnsphere.sqlite` |
+| `JWT_SECRET` | Token signing secret | 64+ char random hex string stored in GCP Secret Manager |
 | `JWT_EXPIRES_IN` | Token duration | `1h` |
 | `CORS_ORIGIN` | Allowed web origin | Fully qualified domain e.g. `https://learnsphere.example.com` |
 | `RATE_LIMIT_WINDOW_MS` | Rate limit duration | `900000` (15 mins) |

@@ -37,10 +37,13 @@ export default function AdminDashboard() {
           <p className="page-subtitle">Real-time system telemetry, enrollment statistics, and course curriculum metrics.</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <Link to="/admin/roadmaps" className="btn btn-primary btn-glow">
+            Manage Roadmaps
+          </Link>
           <Link to="/admin/courses" className="btn btn-secondary">
             Manage Courses
           </Link>
-          <Link to="/admin/reports" className="btn btn-primary">
+          <Link to="/admin/reports" className="btn btn-secondary">
             Export Reports
           </Link>
         </div>

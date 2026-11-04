@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { courseApi, lessonApi, progressApi } from '../services/api';
+import { courseApi, lessonApi, progressApi, bookmarkApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import ExternalVideoCard from '../components/ExternalVideoCard';
+import KnowledgeCheckQuiz from '../components/KnowledgeCheckQuiz';
 import YouTubePlayer from '../components/YouTubePlayer';
+import VideoModal from '../components/VideoModal';
 import {
   ArrowLeft,
   ChevronLeft,
@@ -11,15 +14,17 @@ import {
   Circle,
   Play,
   Clock,
-  Youtube,
+  User,
   BookOpen,
   Layers,
   AlertCircle,
   Menu,
   X,
-  ExternalLink,
   Terminal,
   Sparkles,
+  Bookmark,
+  BookmarkCheck,
+  Video,
 } from 'lucide-react';
 
 export default function CoursePlayer() {
@@ -34,6 +39,35 @@ export default function CoursePlayer() {
   const [error, setError] = useState('');
   const [updatingProgress, setUpdatingProgress] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [togglingBookmark, setTogglingBookmark] = useState(false);
+  const [modalVideo, setModalVideo] = useState(null);
+
+  // Check if current lesson is bookmarked
+  useEffect(() => {
+    if (!activeLesson) return;
+    bookmarkApi
+      .getMyBookmarks()
+      .then((res) => {
+        const bookmarks = res.data.data || [];
+        const found = bookmarks.some((b) => b.lesson_id === activeLesson.id);
+        setIsBookmarked(found);
+      })
+      .catch(() => {});
+  }, [activeLesson?.id]);
+
+  const handleToggleBookmark = async () => {
+    if (!activeLesson || togglingBookmark) return;
+    setTogglingBookmark(true);
+    try {
+      const res = await bookmarkApi.toggle(activeLesson.id);
+      setIsBookmarked(res.data.bookmarked);
+    } catch (err) {
+      console.error('Failed to toggle bookmark', err);
+    } finally {
+      setTogglingBookmark(false);
+    }
+  };
 
   // Load course details, ordered lessons, and enrollment progress
   const fetchCourseContent = async () => {
@@ -278,24 +312,39 @@ export default function CoursePlayer() {
         }}
         className="course-player-grid"
       >
-        {/* Left Column: Embedded YouTube Player & Lesson Content */}
+        {/* Left Column: Structured Educational Content & Supplementary Resources */}
         <main style={{ minWidth: 0 }}>
           {activeLesson ? (
-            <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
-              {/* Responsive 16:9 YouTube Player */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <YouTubePlayer
-                  videoId={activeLesson.video_id}
-                  videoUrl={activeLesson.video_url}
-                  title={activeLesson.title}
-                  description={activeLesson.description}
-                  channelName={activeLesson.channel_name}
-                  duration={activeLesson.duration}
-                  autoplay={false}
-                />
-              </div>
+            <div className="card" style={{ padding: '1.75rem', marginBottom: '1.5rem' }}>
+              {/* Edunova-Branded In-App Video Player */}
+              {(activeLesson.video_id || activeLesson.video_url) && (
+                <div style={{ marginBottom: '1.75rem' }}>
+                  <YouTubePlayer
+                    videoId={activeLesson.video_id}
+                    videoUrl={activeLesson.video_url}
+                    title={activeLesson.title}
+                    description={activeLesson.description}
+                    channelName={activeLesson.channel_name || 'Edunova Technologies Faculty'}
+                    duration={activeLesson.duration}
+                    courseTitle={course.title}
+                    topicTitle={activeLesson.topicTitle || activeLesson.topic_title}
+                    prevLesson={prevLesson}
+                    nextLesson={nextLesson}
+                    onPrevLesson={prevLesson ? () => handleSelectLesson(prevLesson) : null}
+                    onNextLesson={nextLesson ? () => handleSelectLesson(nextLesson) : null}
+                    isCompleted={isCurrentLessonCompleted}
+                    onToggleComplete={enrollment ? handleToggleComplete : null}
+                    updatingProgress={updatingProgress}
+                    onEnded={() => {
+                      if (!isCurrentLessonCompleted && enrollment) {
+                        handleToggleComplete();
+                      }
+                    }}
+                  />
+                </div>
+              )}
 
-              {/* Lesson Controls: Mark Complete & Prev / Next */}
+              {/* Lesson Controls: Topic Badge, Title, Bookmark & Mark Complete */}
               <div
                 style={{
                   display: 'flex',
@@ -330,7 +379,7 @@ export default function CoursePlayer() {
                     </span>
                     {activeLesson.channel_name && (
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <Youtube size={12} color="var(--primary)" /> {activeLesson.channel_name}
+                        <User size={12} color="var(--primary)" /> {activeLesson.channel_name}
                       </span>
                     )}
                     {activeLesson.duration && (
@@ -347,41 +396,74 @@ export default function CoursePlayer() {
                   )}
                 </div>
 
-                {/* Mark as Completed Button */}
-                {enrollment && (
-                  <button
-                    type="button"
-                    onClick={handleToggleComplete}
-                    disabled={updatingProgress}
-                    className={`btn ${isCurrentLessonCompleted ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{
-                      background: isCurrentLessonCompleted ? 'var(--success-bg)' : undefined,
-                      color: isCurrentLessonCompleted ? '#34d399' : undefined,
-                      borderColor: isCurrentLessonCompleted ? 'rgba(16, 185, 129, 0.4)' : undefined,
-                      padding: '0.65rem 1.25rem',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      fontWeight: 600,
-                    }}
-                  >
-                    {isCurrentLessonCompleted ? (
-                      <>
-                        <CheckCircle2 size={18} color="#34d399" /> Completed
-                      </>
-                    ) : (
-                      <>
-                        <Circle size={18} /> Mark as Completed
-                      </>
-                    )}
-                  </button>
-                )}
+                {/* Bookmark & Mark as Completed Buttons */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  {user && (
+                    <button
+                      type="button"
+                      onClick={handleToggleBookmark}
+                      disabled={togglingBookmark}
+                      className="btn btn-secondary"
+                      style={{
+                        padding: '0.65rem 1rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        color: isBookmarked ? '#f59e0b' : 'var(--text-muted)',
+                        borderColor: isBookmarked ? 'rgba(245, 158, 11, 0.4)' : undefined,
+                      }}
+                      title={isBookmarked ? 'Remove Bookmark' : 'Bookmark this Lesson'}
+                    >
+                      {isBookmarked ? (
+                        <>
+                          <BookmarkCheck size={17} color="#f59e0b" />
+                          <span>Bookmarked</span>
+                        </>
+                      ) : (
+                        <>
+                          <Bookmark size={17} />
+                          <span>Bookmark</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+
+                  {enrollment && (
+                    <button
+                      type="button"
+                      onClick={handleToggleComplete}
+                      disabled={updatingProgress}
+                      className={`btn ${isCurrentLessonCompleted ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{
+                        background: isCurrentLessonCompleted ? 'var(--success-bg)' : undefined,
+                        color: isCurrentLessonCompleted ? '#34d399' : undefined,
+                        borderColor: isCurrentLessonCompleted ? 'rgba(16, 185, 129, 0.4)' : undefined,
+                        padding: '0.65rem 1.25rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {isCurrentLessonCompleted ? (
+                        <>
+                          <CheckCircle2 size={18} color="#34d399" /> Completed
+                        </>
+                      ) : (
+                        <>
+                          <Circle size={18} /> Mark as Completed
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Written Notes / Curriculum Documentation */}
               <div style={{ padding: '0.5rem 0.25rem', marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-main)' }}>
-                  Lesson Curriculum & Code Notes
+                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <BookOpen size={18} color="var(--primary)" />
+                  <span>Educational Curriculum & Technical Architecture</span>
                 </h3>
                 <div
                   style={{
@@ -392,7 +474,7 @@ export default function CoursePlayer() {
                     fontFamily: 'var(--font-sans)',
                   }}
                 >
-                  {activeLesson.content || 'Comprehensive tutorial video notes and code demonstrations.'}
+                  {activeLesson.content || 'Comprehensive educational notes and architectural specifications.'}
                 </div>
               </div>
 
@@ -418,51 +500,57 @@ export default function CoursePlayer() {
                 </div>
               )}
 
-              {/* Reference Documentation & Resources */}
+              {/* Supplementary In-App Video Resources */}
               {(() => {
-                const urls = activeLesson.referenceUrls || (typeof activeLesson.reference_urls === 'string' ? JSON.parse(activeLesson.reference_urls || '[]') : (activeLesson.reference_urls || []));
-                if (!urls || urls.length === 0) return null;
+                const resources = (activeLesson.videoResources || []).filter(
+                  (v) => (v.video_id || v.videoId) !== activeLesson.video_id
+                );
+
+                if (resources.length === 0) return null;
+
                 return (
                   <div
                     style={{
-                      marginTop: '1.25rem',
+                      marginTop: '2rem',
                       marginBottom: '1.5rem',
-                      padding: '1.25rem 1.5rem',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid rgba(56, 189, 248, 0.25)',
-                      background: 'rgba(56, 189, 248, 0.03)',
+                      padding: '1.5rem',
+                      borderRadius: 'var(--radius-lg)',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid var(--border-subtle)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#38bdf8', fontWeight: 600, fontSize: '1.05rem' }}>
-                      <BookOpen size={18} />
-                      <span>Official Documentation & Technical References</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', fontWeight: 600, fontSize: '1.05rem' }}>
+                        <Video size={18} color="var(--primary)" />
+                        <span>Interactive Video Modules</span>
+                      </div>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+                        In-App Playback • Edunova Technologies Classroom
+                      </span>
                     </div>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {urls.map((url, idx) => (
-                        <li key={idx}>
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.45rem',
-                              color: '#60a5fa',
-                              fontSize: '0.875rem',
-                              textDecoration: 'none',
-                            }}
-                            onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                            onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
-                          >
-                            <ExternalLink size={13} /> {url}
-                          </a>
-                        </li>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                      {resources.map((v) => (
+                        <ExternalVideoCard
+                          key={v.id || v.video_id}
+                          video={v}
+                          onPlay={(videoObj) => setModalVideo(videoObj)}
+                        />
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 );
               })()}
+
+              {/* Interactive Knowledge-Check Quiz */}
+              <KnowledgeCheckQuiz
+                lessonId={activeLesson.id}
+                onPassed={() => {
+                  if (!isCurrentLessonCompleted) {
+                    handleToggleComplete();
+                  }
+                }}
+              />
             </div>
           ) : (
             <div className="card empty-state">
@@ -675,6 +763,13 @@ export default function CoursePlayer() {
           </div>
         </aside>
       </div>
+
+      {/* In-App Video Modal for Supplementary Lessons */}
+      <VideoModal
+        isOpen={Boolean(modalVideo)}
+        onClose={() => setModalVideo(null)}
+        videoData={modalVideo}
+      />
     </div>
   );
 }

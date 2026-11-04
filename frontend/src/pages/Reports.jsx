@@ -50,7 +50,7 @@ export default function Reports() {
   }, [activeTab, page]);
 
   const handleDownloadCsv = (endpoint) => {
-    const token = localStorage.getItem('learnsphere_token');
+    const token = localStorage.getItem('edunova_token') || localStorage.getItem('learnsphere_token');
     // Fetch CSV with bearer token and trigger browser download
     fetch(endpoint, {
       headers: {

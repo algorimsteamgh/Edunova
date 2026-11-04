@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, AlertCircle, User, Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import Logo from '../components/Logo';
 
 export default function Register() {
   const [fullName, setFullName] = useState('');
@@ -12,8 +13,16 @@ export default function Register() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const { register } = useAuth();
+  const { user, register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // If already authenticated, redirect to home page immediately
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +41,20 @@ export default function Register() {
     setSubmitting(true);
     try {
       await register(fullName, email, password);
-      navigate('/courses');
+
+      // Determine destination target, defaulting to Home ('/')
+      const fromLocation = location.state?.from;
+      let target = '/';
+      if (fromLocation) {
+        const fullPath = typeof fromLocation === 'string'
+          ? fromLocation
+          : `${fromLocation.pathname || ''}${fromLocation.search || ''}${fromLocation.hash || ''}`;
+        if (fullPath && !fullPath.startsWith('/login') && !fullPath.startsWith('/register')) {
+          target = fullPath;
+        }
+      }
+
+      navigate(target, { replace: true });
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -46,11 +68,14 @@ export default function Register() {
       <div className="auth-matte-card">
         {/* Header */}
         <div className="auth-matte-header">
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+            <Logo variant="full" size="lg" />
+          </div>
           <div className="auth-matte-badge">
             <span className="auth-matte-dot"></span>
             <span>New Student Enrollment</span>
           </div>
-          <h1 className="auth-matte-title">Create Student Account</h1>
+          <h1 className="auth-matte-title">Join Edunova Technologies</h1>
           <p className="auth-matte-subtitle">
             Start discovering verified courses and building production-ready engineering skills today.
           </p>
@@ -174,7 +199,11 @@ export default function Register() {
         {/* Switch Link */}
         <div style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.95rem', color: 'var(--text-muted)' }}>
           Already have an account?{' '}
-          <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: '4px' }}>
+          <Link
+            to="/login"
+            state={location.state}
+            style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: '4px' }}
+          >
             Sign In
           </Link>
         </div>

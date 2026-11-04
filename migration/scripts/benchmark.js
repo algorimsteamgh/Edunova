@@ -9,7 +9,7 @@ const legacyDbPath = path.resolve(projectRoot, 'legacy-app/data/legacy.sqlite');
 const modernDbPath = path.resolve(projectRoot, 'backend/data/learnsphere.sqlite');
 
 function runBenchmark() {
-  console.log('[Benchmark] Measuring empirical performance: Legacy Monolith vs. Modernized LearnSphere');
+  console.log('[Benchmark] Measuring empirical performance: Legacy Monolith vs. Modernized Edunova Technologies');
 
   const legacyDb = new Database(legacyDbPath, { readonly: true });
   const modernDb = new Database(modernDbPath, { readonly: true });
@@ -95,7 +95,7 @@ function runBenchmark() {
 
 ## 1. Measured Query Latency Comparison
 
-| Benchmark Operation | Legacy Database (Unindexed) | Modernized LearnSphere (WAL + Indexes) | Relative Latency |
+| Benchmark Operation | Legacy Database (Unindexed) | Modernized Edunova Technologies (WAL + Indexes) | Relative Latency |
 |---|---|---|---|
 | **Course Syllabus & Lesson Query** | \`${results.courseLookup.legacyAvgMs} ms\` | \`${results.courseLookup.modernAvgMs} ms\` | Indexed query execution |
 | **Progress Verification & Aggregation** | \`${results.progressAggregation.legacyAvgMs} ms\` | \`${results.progressAggregation.modernAvgMs} ms\` | Compound indexed join |
@@ -104,7 +104,7 @@ function runBenchmark() {
 
 ## 2. Measured Relational Integrity & Security Comparison
 
-| Architectural Dimension | Legacy Implementation | Modernized LearnSphere | Measured Impact |
+| Architectural Dimension | Legacy Implementation | Modernized Edunova Technologies | Measured Impact |
 |---|---|---|---|
 | **Foreign Key Enforcement** | Disabled (\`PRAGMA foreign_keys = OFF\`) | Enabled (\`PRAGMA foreign_keys = ON\`) | **${results.dataIntegrity.modernForeignViolations} foreign key violations** vs. **${results.dataIntegrity.legacyOrphanedRecords} orphaned records in legacy** |
 | **Password Hashing** | Unsalted MD5 (\`d41d8cd98f00...\`) | Salted Bcrypt (Cost 10/12) | Eliminates rainbow table vulnerability |

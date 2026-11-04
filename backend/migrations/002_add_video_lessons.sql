@@ -1,5 +1,5 @@
 -- ==========================================================
--- LearnSphere Migration: 002_add_video_lessons.sql
+-- Edunova Technologies Migration: 002_add_video_lessons.sql
 -- Add YouTube Video Lesson support, channels, and metadata
 -- ==========================================================
 

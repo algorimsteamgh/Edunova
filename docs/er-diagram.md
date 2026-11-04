@@ -1,4 +1,4 @@
-# LearnSphere Entity-Relationship Specification & Data Dictionary
+# Edunova Technologies Entity-Relationship Specification & Data Dictionary
 
 ## 1. Relational ER Diagram
 

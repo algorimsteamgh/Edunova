@@ -7,11 +7,14 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
 console.log('\x1b[36m%s\x1b[0m', '═══════════════════════════════════════════════════════════════');
-console.log('\x1b[36m%s\x1b[0m', '  Starting LearnSphere Development Servers (Backend & Frontend)');
+console.log('\x1b[36m%s\x1b[0m', '  Starting Edunova Technologies Development Servers (Backend & Frontend)');
 console.log('\x1b[36m%s\x1b[0m', '═══════════════════════════════════════════════════════════════');
 console.log('\x1b[32m%s\x1b[0m', '  Backend API:     http://localhost:5001');
 console.log('\x1b[34m%s\x1b[0m', '  Frontend Web UI: http://localhost:3000');
 console.log('\x1b[36m%s\x1b[0m', '═══════════════════════════════════════════════════════════════\n');
+
+// Ensure frontend proxy points to local backend port 5001 by default
+process.env.VITE_PROXY_TARGET = process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:5001';
 
 // Detect package manager (npm or pnpm)
 const isPnpm = process.env.npm_config_user_agent?.includes('pnpm') || false;
@@ -55,7 +58,7 @@ const backend = startService('Backend', 'backend', '\x1b[32m');
 const frontend = startService('Frontend', 'frontend', '\x1b[34m');
 
 function cleanup() {
-  console.log('\n\x1b[33mStopping all LearnSphere services...\x1b[0m');
+  console.log('\n\x1b[33mStopping all Edunova Technologies services...\x1b[0m');
   try {
     backend.kill('SIGTERM');
   } catch {}

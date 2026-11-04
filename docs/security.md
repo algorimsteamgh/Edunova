@@ -1,8 +1,8 @@
-# LearnSphere Security & Threat Model
+# Edunova Technologies Security & Threat Model
 
 ## 1. Security Architecture & Threat Model
 
-LearnSphere incorporates defense-in-depth principles across the presentation, application, and data tiers, directly neutralizing common OWASP Top 10 vulnerabilities.
+Edunova Technologies incorporates defense-in-depth principles across the presentation, application, and data tiers, directly neutralizing common OWASP Top 10 vulnerabilities.
 
 ```mermaid
 flowchart LR

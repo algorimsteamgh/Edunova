@@ -1,5 +1,5 @@
 -- ==========================================================
--- LearnSphere Initial Database Schema (001_initial_schema.sql)
+-- Edunova Technologies Initial Database Schema (001_initial_schema.sql)
 -- Relational SQLite schema with foreign-key integrity,
 -- unique constraints, and performance indexes.
 -- ==========================================================

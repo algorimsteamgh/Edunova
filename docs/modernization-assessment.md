@@ -4,13 +4,13 @@
 
 The legacy LMS application suffered from critical architectural, operational, and security deficiencies that prevented scalability, introduced severe security vulnerabilities, and resulted in frequent data integrity failures.
 
-This document formally captures the architectural gap between the legacy codebase and the modernized **LearnSphere** platform, the engineering rationale for each modernization decision, risk mitigation strategies, and an empirical benchmarking framework.
+This document formally captures the architectural gap between the legacy codebase and the modernized **Edunova Technologies** platform, the engineering rationale for each modernization decision, risk mitigation strategies, and an empirical benchmarking framework.
 
 ---
 
 ## 2. Comparative Matrix: Legacy vs. Modernized Architecture
 
-| Architectural Dimension | Legacy Implementation (`legacy-app`) | Modernized LearnSphere (`backend`) | Impact & Rationale |
+| Architectural Dimension | Legacy Implementation (`legacy-app`) | Modernized Edunova Technologies (`backend`) | Impact & Rationale |
 |---|---|---|---|
 | **Code Organization** | 1 Monolithic file (`server.js`) mixing routing, DB queries, UI rendering, and business rules. | Clean 3-tier modular domain structure (routes $\rightarrow$ validators $\rightarrow$ controllers $\rightarrow$ services $\rightarrow$ repositories). | Eliminates tight coupling; enables unit testing of business logic without spinning up HTTP or DB layers. |
 | **Authentication & Passwords** | Plaintext or weak unsalted MD5 hashes; unverified sessions; no rate limiting. | Salted Argon2id / Bcrypt password hashing, JWT with strict expiration, secure cookie/header options, IP rate limiting. | Defends against rainbow tables, brute-force attacks, and session hijacking (OWASP A07:2021). |

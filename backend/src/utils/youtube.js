@@ -1,5 +1,5 @@
 /**
- * LearnSphere YouTube Video Utilities
+ * Edunova Technologies YouTube Video Utilities
  * Provides secure parsing, normalization, and validation of YouTube URLs and video IDs.
  */
 

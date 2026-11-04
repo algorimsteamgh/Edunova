@@ -88,14 +88,3 @@ export function getYouTubeEmbedUrl(videoId, options = {}) {
 
   return `https://www.youtube-nocookie.com/embed/${cleanId}?${params.toString()}`;
 }
-
-/**
- * Returns the fallback standard YouTube watch URL.
- * @param {string} videoId
- * @returns {string}
- */
-export function getYouTubeWatchUrl(videoId) {
-  const cleanId = extractYouTubeVideoId(videoId);
-  if (!cleanId) return '';
-  return `https://www.youtube.com/watch?v=${cleanId}`;
-}

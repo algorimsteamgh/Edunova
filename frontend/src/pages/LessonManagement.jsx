@@ -14,7 +14,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Play,
-  Youtube,
+  User,
   Clock,
 } from 'lucide-react';
 
@@ -144,7 +144,7 @@ export default function LessonManagement() {
       content: lesson.content || '',
       position: lesson.position,
       status: lesson.status,
-      videoUrl: lesson.video_url || (lesson.video_id ? `https://www.youtube.com/watch?v=${lesson.video_id}` : ''),
+      videoUrl: lesson.video_url || lesson.video_id || '',
       duration: lesson.duration || '',
       description: lesson.description || '',
       channelName: lesson.channel_name || '',
@@ -185,7 +185,7 @@ export default function LessonManagement() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Curriculum Modules: {course?.title}</h1>
-          <p className="page-subtitle">Add, reorder, update syllabus lessons, publication statuses, and embedded YouTube videos.</p>
+          <p className="page-subtitle">Add, reorder, update syllabus lessons, publication statuses, and embedded video classrooms.</p>
         </div>
         <button onClick={openCreateModal} className="btn btn-primary">
           <Plus size={18} /> Add New Lesson
@@ -206,7 +206,7 @@ export default function LessonManagement() {
             <tr>
               <th>Order</th>
               <th>Lesson Title & Channel</th>
-              <th>YouTube Video</th>
+              <th>Video Stream</th>
               <th>Duration</th>
               <th>Preview</th>
               <th>Status</th>
@@ -230,7 +230,7 @@ export default function LessonManagement() {
                     <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>{lesson.title}</div>
                     {lesson.channel_name && (
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.15rem' }}>
-                        <Youtube size={12} color="var(--primary)" /> {lesson.channel_name}
+                        <User size={12} color="var(--primary)" /> {lesson.channel_name}
                       </div>
                     )}
                   </td>
@@ -339,13 +339,13 @@ export default function LessonManagement() {
                 />
               </div>
 
-              {/* YouTube Video URL Input with Live Validation */}
+              {/* Video URL Input with Live Validation */}
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>YouTube Video URL or ID</span>
+                  <span>Video URL or ID</span>
                   {formData.videoUrl && (
                     <span style={{ fontSize: '0.8rem', color: extractedVideoId ? '#10b981' : 'var(--danger)' }}>
-                      {extractedVideoId ? `✓ Valid Video ID: ${extractedVideoId}` : '✗ Invalid YouTube Link'}
+                      {extractedVideoId ? `✓ Valid Video ID: ${extractedVideoId}` : '✗ Invalid Video Link'}
                     </span>
                   )}
                 </label>
@@ -354,10 +354,10 @@ export default function LessonManagement() {
                   className="form-input"
                   value={formData.videoUrl}
                   onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                  placeholder="e.g. https://www.youtube.com/watch?v=clvir_bDDgk or youtu.be/clvir_bDDgk"
+                  placeholder="e.g. clvir_bDDgk or stream ID"
                 />
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem', display: 'block' }}>
-                  Supports standard watch URLs, short links, shorts, and embed URLs from youtube.com and youtu.be.
+                  Enter the 11-character video ID or stream key for in-app video classroom playback.
                 </span>
               </div>
 
@@ -483,18 +483,6 @@ export default function LessonManagement() {
                   value={formData.practicalExercise}
                   onChange={(e) => setFormData({ ...formData, practicalExercise: e.target.value })}
                   placeholder="Exercise prompt, lab steps, and expected outputs"
-                />
-              </div>
-
-              {/* Reference Documentation URLs */}
-              <div className="form-group">
-                <label className="form-label">Reference Documentation URLs (One per line)</label>
-                <textarea
-                  className="form-textarea"
-                  style={{ minHeight: '60px' }}
-                  value={formData.referenceUrlsText}
-                  onChange={(e) => setFormData({ ...formData, referenceUrlsText: e.target.value })}
-                  placeholder="https://docs.python.org/3/&#10;https://scikit-learn.org"
                 />
               </div>
 

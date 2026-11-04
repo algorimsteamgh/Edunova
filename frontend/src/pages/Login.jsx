@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, AlertCircle, User, Lock, Eye, EyeOff, ShieldCheck, Zap } from 'lucide-react';
+import Logo from '../components/Logo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,10 +11,16 @@ export default function Login() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/courses';
+
+  // If already authenticated, redirect to home page immediately
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +29,20 @@ export default function Login() {
 
     try {
       await login(email, password);
-      navigate(from);
+
+      // Determine destination target, defaulting to Home ('/')
+      const fromLocation = location.state?.from;
+      let target = '/';
+      if (fromLocation) {
+        const fullPath = typeof fromLocation === 'string'
+          ? fromLocation
+          : `${fromLocation.pathname || ''}${fromLocation.search || ''}${fromLocation.hash || ''}`;
+        if (fullPath && !fullPath.startsWith('/login') && !fullPath.startsWith('/register')) {
+          target = fullPath;
+        }
+      }
+
+      navigate(target, { replace: true });
     } catch (err) {
       setError(err.message || 'Unable to authenticate. Please verify your credentials.');
     } finally {
@@ -42,11 +62,14 @@ export default function Login() {
       <div className="auth-matte-card">
         {/* Header */}
         <div className="auth-matte-header">
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+            <Logo variant="full" size="lg" />
+          </div>
           <div className="auth-matte-badge">
             <span className="auth-matte-dot"></span>
             <span>Secure Student & Staff Portal</span>
           </div>
-          <h1 className="auth-matte-title">Sign In to LearnSphere</h1>
+          <h1 className="auth-matte-title">Sign In to Edunova Technologies</h1>
           <p className="auth-matte-subtitle">
             Access your courses, track your lessons, and continue your learning journey.
           </p>
@@ -133,7 +156,7 @@ export default function Login() {
             <button
               type="button"
               className="auth-demo-chip"
-              onClick={() => handleDemoFill('alex.mercer@learnsphere.io', 'StudentPass123!')}
+              onClick={() => handleDemoFill('alex.mercer', 'StudentPass123!')}
               title="Fill Alex Mercer (Student)"
             >
               <Zap size={14} color="#6366f1" />
@@ -145,7 +168,11 @@ export default function Login() {
         {/* Switch Link */}
         <div style={{ textAlign: 'center', marginTop: '2rem', fontSize: '0.95rem', color: 'var(--text-muted)' }}>
           Don't have an account?{' '}
-          <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: '4px' }}>
+          <Link
+            to="/register"
+            state={location.state}
+            style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: '4px' }}
+          >
             Register as Student
           </Link>
         </div>

@@ -1,8 +1,8 @@
-# LearnSphere System Architecture & Technical Specification
+# Edunova Technologies System Architecture & Technical Specification
 
 ## 1. Executive Summary & Architectural Overview
 
-**LearnSphere** is an enterprise-grade, modernized Learning Management System (LMS) built to replace an insecure, unmaintainable legacy monolith. It delivers a robust three-tier architecture ensuring strict relational data integrity, role-based access control (RBAC), end-to-end auditability, versioned database migrations, and production-ready observability.
+**Edunova Technologies** is an enterprise-grade, modernized Learning Management System (LMS) built to replace an insecure, unmaintainable legacy monolith. It delivers a robust three-tier architecture ensuring strict relational data integrity, role-based access control (RBAC), end-to-end auditability, versioned database migrations, and production-ready observability.
 
 ```mermaid
 graph TD
@@ -94,7 +94,7 @@ SQLite supports multiple concurrent readers alongside a single active writer. To
 
 A core flaw of legacy systems is calculating progress from manually edited percentages or allowing students to record completions against lessons not belonging to their enrolled course.
 
-LearnSphere enforces the following immutable domain rules:
+Edunova Technologies enforces the following immutable domain rules:
 
 1. **Single Source of Truth**: Progress percentage is **never** an editable column. It is dynamically computed or materialized via deterministic aggregation:
    $$\text{Progress \%} = \begin{cases} 0\% & \text{if } \text{TotalPublishedLessons} = 0 \\ \left\lfloor \frac{\text{CompletedLessonsCount}}{\text{TotalPublishedLessons}} \times 100 \right\rfloor & \text{if } \text{TotalPublishedLessons} > 0 \end{cases}$$

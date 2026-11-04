@@ -15,6 +15,9 @@ import { courseEnrollRouter, myEnrollmentsRouter } from './modules/enrollments/r
 import progressRouter from './modules/progress/routes.js';
 import adminRoutes from './modules/admin/routes.js';
 import healthRoutes from './modules/health/routes.js';
+import roadmapsRoutes from './modules/roadmaps/routes.js';
+import quizzesRoutes from './modules/quizzes/routes.js';
+import bookmarksRoutes from './modules/bookmarks/routes.js';
 
 export function createApp() {
   const app = express();
@@ -52,9 +55,9 @@ export function createApp() {
   app.all('/', (req, res) => {
     const name = req.body?.name || 'Developer';
     res.status(200).json({
-      service: 'LearnSphere LMS API',
+      service: 'Edunova Technologies LMS API',
       status: 'ONLINE',
-      greeting: `Hello ${name}! LearnSphere LMS backend is running successfully on Google Cloud Run.`,
+      greeting: `Hello ${name}! Edunova Technologies LMS backend is running successfully on Google Cloud Run.`,
       documentation: '/api/v1/courses',
       health: '/health/ready',
       version: '2.0.0',
@@ -71,6 +74,9 @@ export function createApp() {
   apiV1.use('/me/enrollments', myEnrollmentsRouter);
   apiV1.use('/enrollments', progressRouter);
   apiV1.use('/admin', adminRoutes);
+  apiV1.use('/roadmaps', roadmapsRoutes);
+  apiV1.use('/', quizzesRoutes);
+  apiV1.use('/', bookmarksRoutes);
 
   app.use('/api/v1', apiV1);
 

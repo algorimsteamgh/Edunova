@@ -4,6 +4,9 @@ dist/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+*.db
+backend/data/*.sqlite*
+backend/data/*.db
 backend/backups/
 migration/backups/
 migration/temp_test_*/

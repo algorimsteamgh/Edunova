@@ -1,8 +1,8 @@
-# LearnSphere Testing Strategy & Quality Assurance Framework
+# Edunova Technologies Testing Strategy & Quality Assurance Framework
 
 ## 1. Quality Assurance Philosophy & Testing Pyramid
 
-LearnSphere uses a multi-layered testing pyramid to guarantee reliability across unit logic, database transactions, API contracts, migration pipelines, and end-to-end browser workflows.
+Edunova Technologies uses a multi-layered testing pyramid to guarantee reliability across unit logic, database transactions, API contracts, migration pipelines, and end-to-end browser workflows.
 
 ```mermaid
 pie title Test Suite Distribution
