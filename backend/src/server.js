@@ -50,6 +50,16 @@ async function startServer() {
       logger.info({ port: config.port, env: config.env }, 'LearnSphere API server is running');
     });
 
+    // 5b. One-off account seeding, run after the server is up so password hashing never delays startup.
+    // SEED_USERS=apply is idempotent; SEED_USERS=rollback removes exactly those accounts.
+    if (process.env.SEED_USERS === 'apply' || process.env.SEED_USERS === 'rollback') {
+      const { applySeedUsers, rollbackSeedUsers } = await import('./database/seedUsers.js');
+      const log = (msg) => logger.info(msg);
+      Promise.resolve()
+        .then(() => (process.env.SEED_USERS === 'apply' ? applySeedUsers(db, { log }) : rollbackSeedUsers(db, { log })))
+        .catch((err) => logger.error({ err }, '[Seed Users] Failed; nothing was changed'));
+    }
+
     // 6. Graceful Shutdown Handlers
     const shutdown = (signal) => {
       logger.info({ signal }, 'Termination signal received; shutting down gracefully');

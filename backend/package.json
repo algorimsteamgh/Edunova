@@ -10,6 +10,7 @@
     "migrate": "node src/database/migrator.js",
     "seed": "node src/database/seed.js",
     "seed:admin": "node src/database/seed-admin.js",
+    "seed:users": "node src/database/seed-users.js",
     "db:integrity": "node -e \"import('./src/database/index.js').then(m => m.runIntegrityCheck())\"",
     "db:backup": "node -e \"import('./src/database/index.js').then(m => m.createBackup())\"",
     "test": "vitest run",
