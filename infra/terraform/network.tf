@@ -112,13 +112,4 @@ resource "aws_route" "to_liftproof" {
   vpc_peering_connection_id = aws_vpc_peering_connection.liftproof.id
 }
 
-data "aws_route_tables" "liftproof" {
-  vpc_id = var.liftproof_vpc_id
-}
 
-resource "aws_route" "from_liftproof" {
-  for_each                  = toset(data.aws_route_tables.liftproof.ids)
-  route_table_id            = each.value
-  destination_cidr_block    = var.vpc_cidr
-  vpc_peering_connection_id = aws_vpc_peering_connection.liftproof.id
-}

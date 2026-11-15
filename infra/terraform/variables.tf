@@ -98,3 +98,8 @@ variable "create_github_oidc_provider" {
   type        = bool
   default     = false
 }
+variable "liftproof_instance_id" {
+  description = "Liftproof EC2 instance; its subnet's route table gets the return route to Edunova"
+  type        = string
+  default     = "i-08427d0169bd1be15"
+}

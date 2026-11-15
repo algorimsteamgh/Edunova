@@ -95,7 +95,7 @@ resource "aws_budgets_budget" "edunova" {
 
 resource "aws_resourcegroups_group" "edunova" {
   name        = "Edunova"
-  description = "Every resource tagged Application = Edunova"
+  description = "Every resource tagged Application Edunova"
   resource_query {
     query = jsonencode({
       ResourceTypeFilters = ["AWS::AllSupported"]
