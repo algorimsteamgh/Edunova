@@ -1,0 +1,12 @@
+output "route53_name_servers" { value = aws_route53_zone.main.name_servers }
+output "cloudfront_domain" { value = aws_cloudfront_distribution.site.domain_name }
+output "cloudfront_id" { value = aws_cloudfront_distribution.site.id }
+output "frontend_bucket" { value = aws_s3_bucket.site.bucket }
+output "ecr_repository_url" { value = aws_ecr_repository.api.repository_url }
+output "rds_endpoint" { value = aws_db_instance.main.address }
+output "rds_master_secret_arn" { value = aws_db_instance.main.master_user_secret[0].secret_arn }
+output "migration_host_id" { value = var.create_migration_host ? aws_instance.migration[0].id : null }
+output "vpc_id" { value = aws_vpc.main.id }
+output "ecs_cluster" { value = aws_ecs_cluster.main.name }
+output "ecs_service" { value = aws_ecs_service.api.name }
+output "github_deploy_role_arn" { value = aws_iam_role.deploy.arn }

@@ -1,0 +1,11 @@
+account_id         = "817137373248"        # confirm this is the SMAC Tech account for Edunova
+liftproof_sg_id    = "sg-05f586c17fab85c51"  # Liftproof instance i-08427d0169bd1be15
+admin_email        = "REPLACE"             # same ADMIN_EMAIL as Cloud Run learnsphere-backend
+alert_email        = "REPLACE"
+map_migrated       = ""                    # migXXXXXXXXXX from the MAP agreement, if any
+gcp_apex_ipv4      = ["216.239.32.21", "216.239.34.21", "216.239.36.21", "216.239.38.21"]  # copy from GoDaddy
+gcp_apex_ipv6      = ["2001:4860:4802:32::15", "2001:4860:4802:34::15", "2001:4860:4802:36::15", "2001:4860:4802:38::15"]
+live_on            = "gcp"
+api_desired_count  = 0
+image_tag          = "bootstrap"
+create_github_oidc_provider = false        # true only if IAM > Identity providers has no GitHub entry
