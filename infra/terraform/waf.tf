@@ -1,4 +1,5 @@
-# Five rules or fewer, so it fits the CloudFront Free flat-rate plan.
+# Login rate limit plus three AWS managed rule groups. The login rule uses a byte-match scope-down,
+# which the CloudFront Free flat-rate plan does not allow, so the distribution stays on pay-as-you-go.
 resource "aws_wafv2_web_acl" "site" {
   provider = aws.us_east_1
   name     = "${local.name}-cloudfront"
