@@ -8,7 +8,7 @@ import { logAuditEvent } from '../../utils/auditLogger.js';
 
 export class AuthService {
   async register({ fullName, email, password }) {
-    const existing = authRepository.findByEmail(email);
+    const existing = await authRepository.findByEmail(email);
     if (existing) {
       throw new ConflictError('A user with this email address already exists', null, 'EMAIL_ALREADY_REGISTERED');
     }
@@ -19,7 +19,7 @@ export class AuthService {
     const now = new Date().toISOString();
 
     // Students are registered with role 'student' strictly
-    const user = authRepository.createUser({
+    const user = await authRepository.createUser({
       id: userId,
       fullName,
       email,
@@ -29,14 +29,14 @@ export class AuthService {
       updatedAt: now,
     });
 
-    logAuditEvent(userId, 'USER_REGISTERED', 'user', userId, { email, role: 'student' });
+    await logAuditEvent(userId, 'USER_REGISTERED', 'user', userId, { email, role: 'student' });
 
     const token = this.generateToken(user);
     return { user, token };
   }
 
   async login({ email, password }) {
-    const user = authRepository.findByEmail(email);
+    const user = await authRepository.findByEmail(email);
     if (!user) {
       throw new UnauthorizedError('Invalid email or password', null, 'INVALID_CREDENTIALS');
     }
@@ -47,14 +47,14 @@ export class AuthService {
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      logAuditEvent(user.id, 'USER_LOGIN_FAILED', 'user', user.id, { email });
+      await logAuditEvent(user.id, 'USER_LOGIN_FAILED', 'user', user.id, { email });
       throw new UnauthorizedError('Invalid email or password', null, 'INVALID_CREDENTIALS');
     }
 
     const { password_hash, ...safeUser } = user;
     const token = this.generateToken(safeUser);
 
-    logAuditEvent(user.id, 'USER_LOGIN_SUCCESS', 'user', user.id, { email });
+    await logAuditEvent(user.id, 'USER_LOGIN_SUCCESS', 'user', user.id, { email });
     return { user: safeUser, token };
   }
 
@@ -70,8 +70,8 @@ export class AuthService {
     );
   }
 
-  getCurrentUser(userId) {
-    const user = authRepository.findById(userId);
+  async getCurrentUser(userId) {
+    const user = await authRepository.findById(userId);
     if (!user) {
       throw new UnauthorizedError('User account no longer exists');
     }

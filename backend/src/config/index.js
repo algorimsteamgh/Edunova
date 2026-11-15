@@ -30,8 +30,9 @@ function parseFlag(value, fallback) {
 export const config = {
   env,
   port: parseInt(process.env.PORT || '5001', 10),
-  dbPath: process.env.DATABASE_PATH || path.resolve(backendRoot, 'data/learnsphere.sqlite'),
-  dbBusyTimeout: parseInt(process.env.DATABASE_BUSY_TIMEOUT || '5000', 10),
+  // PostgreSQL connection: DATABASE_URL, or the standard PG* variables (see database/index.js).
+  dbConfigured: Boolean(process.env.DATABASE_URL || process.env.PGHOST),
+  dbPoolMax: parseInt(process.env.DATABASE_POOL_MAX || '10', 10),
   jwtSecret: process.env.JWT_SECRET || (env === 'production' ? null : DEV_JWT_SECRET),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '2h',
   corsOrigin: process.env.CORS_ORIGIN || '*',
@@ -42,10 +43,6 @@ export const config = {
   adminEmail: process.env.ADMIN_EMAIL || '',
   adminPassword: process.env.ADMIN_PASSWORD || '',
   adminName: process.env.ADMIN_NAME || 'Platform Administrator',
-  // Cloud Run sets K_SERVICE; its container disk is wiped on every restart.
-  onCloudRun: Boolean(process.env.K_SERVICE),
-  litestreamBucket: process.env.LITESTREAM_BUCKET || '',
-  allowEphemeralDb: parseFlag(process.env.ALLOW_EPHEMERAL_DB, false),
   backendRoot,
 };
 
@@ -64,11 +61,8 @@ export function getConfigErrors(cfg = config) {
     errors.push('JWT_SECRET is a value published in this repository; generate a new random secret.');
   }
 
-  if (cfg.onCloudRun && !cfg.litestreamBucket && !cfg.allowEphemeralDb) {
-    errors.push(
-      'Running on Cloud Run without durable storage: set LITESTREAM_BUCKET (see scripts/deploy-gcp.sh) ' +
-        'or ALLOW_EPHEMERAL_DB=true to accept losing all data on every restart.'
-    );
+  if (!cfg.dbConfigured) {
+    errors.push('No database configured: set DATABASE_URL or PGHOST/PGDATABASE/PGUSER/PGPASSWORD.');
   }
 
   return errors;

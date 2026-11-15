@@ -36,7 +36,7 @@ export class AuthController {
 
   async me(req, res, next) {
     try {
-      const user = authService.getCurrentUser(req.user.id);
+      const user = await authService.getCurrentUser(req.user.id);
       res.status(200).json({
         success: true,
         data: { user },

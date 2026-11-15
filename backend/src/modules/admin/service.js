@@ -9,39 +9,39 @@ export class AdminService {
     }
   }
 
-  getStats(currentUser) {
+  async getStats(currentUser) {
     this.ensureAdmin(currentUser);
-    return adminRepository.getSystemStats();
+    return await adminRepository.getSystemStats();
   }
 
-  listUsers(currentUser, query) {
+  async listUsers(currentUser, query) {
     this.ensureAdmin(currentUser);
-    return adminRepository.listUsers(query);
+    return await adminRepository.listUsers(query);
   }
 
-  getEnrollmentsReport(currentUser, query) {
+  async getEnrollmentsReport(currentUser, query) {
     this.ensureAdmin(currentUser);
-    return adminRepository.getEnrollmentsReport(query);
+    return await adminRepository.getEnrollmentsReport(query);
   }
 
-  getCompletionsReport(currentUser, query) {
+  async getCompletionsReport(currentUser, query) {
     this.ensureAdmin(currentUser);
-    return adminRepository.getCompletionsReport(query);
+    return await adminRepository.getCompletionsReport(query);
   }
 
-  getProgressDetailsReport(currentUser, enrollmentId) {
+  async getProgressDetailsReport(currentUser, enrollmentId) {
     this.ensureAdmin(currentUser);
-    return adminRepository.getProgressDetailsReport({ enrollmentId });
+    return await adminRepository.getProgressDetailsReport({ enrollmentId });
   }
 
-  getHealthSummary(currentUser) {
+  async getHealthSummary(currentUser) {
     this.ensureAdmin(currentUser);
-    return adminRepository.getHealthSummary();
+    return await adminRepository.getHealthSummary();
   }
 
-  exportEnrollmentsCsv(currentUser, query) {
+  async exportEnrollmentsCsv(currentUser, query) {
     this.ensureAdmin(currentUser);
-    const { report } = adminRepository.getEnrollmentsReport({ ...query, limit: 10000 });
+    const { report } = await adminRepository.getEnrollmentsReport({ ...query, limit: 10000 });
 
     const records = report.map((r) => [
       r.enrollment_id,
@@ -73,9 +73,9 @@ export class AdminService {
     });
   }
 
-  exportCompletionsCsv(currentUser, query) {
+  async exportCompletionsCsv(currentUser, query) {
     this.ensureAdmin(currentUser);
-    const { report } = adminRepository.getCompletionsReport({ ...query, limit: 10000 });
+    const { report } = await adminRepository.getCompletionsReport({ ...query, limit: 10000 });
 
     const records = report.map((r) => [
       r.enrollment_id,

@@ -4,12 +4,10 @@ import { createApp } from '../backend/src/app.js';
 import { getDatabase, closeDatabase } from '../backend/src/database/index.js';
 import { runMigrations } from '../backend/src/database/migrator.js';
 import crypto from 'node:crypto';
-import path from 'node:path';
-import fs from 'node:fs';
 
 describe('End-to-End Holistic User & Admin Workflow', () => {
   let app;
-  let testDbPath;
+  let testSchema;
   let studentToken;
   let peerToken;
   let adminToken;
@@ -20,12 +18,11 @@ describe('End-to-End Holistic User & Admin Workflow', () => {
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
-    const testId = crypto.randomBytes(4).toString('hex');
-    testDbPath = path.resolve(process.cwd(), `backend/data/e2e_${testId}.sqlite`);
-    process.env.DATABASE_PATH = testDbPath;
+    testSchema = `e2e_${crypto.randomBytes(4).toString('hex')}`;
 
-    const db = getDatabase(testDbPath);
-    runMigrations(db);
+    const db = getDatabase({ schema: testSchema });
+    await db.exec(`CREATE SCHEMA ${testSchema}`);
+    await runMigrations(db);
 
     app = createApp();
 
@@ -38,7 +35,7 @@ describe('End-to-End Holistic User & Admin Workflow', () => {
         password: 'AdminPassword123!',
       });
     // Promote to admin in DB
-    db.prepare("UPDATE users SET role = 'admin' WHERE email = 'e2e.admin@learnsphere.io'").run();
+    await db.prepare("UPDATE users SET role = 'admin' WHERE email = 'e2e.admin@learnsphere.io'").run();
 
     const adminLogin = await request(app)
       .post('/api/v1/auth/login')
@@ -46,15 +43,9 @@ describe('End-to-End Holistic User & Admin Workflow', () => {
     adminToken = adminLogin.body.data.token;
   });
 
-  afterAll(() => {
-    closeDatabase();
-    if (testDbPath && fs.existsSync(testDbPath)) {
-      try {
-        fs.unlinkSync(testDbPath);
-        if (fs.existsSync(`${testDbPath}-wal`)) fs.unlinkSync(`${testDbPath}-wal`);
-        if (fs.existsSync(`${testDbPath}-shm`)) fs.unlinkSync(`${testDbPath}-shm`);
-      } catch {}
-    }
+  afterAll(async () => {
+    await getDatabase().exec(`DROP SCHEMA IF EXISTS ${testSchema} CASCADE`);
+    await closeDatabase();
   });
 
   it('Step 1: Admin authors a course and 2 lessons', async () => {

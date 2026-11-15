@@ -5,7 +5,7 @@ export class ProgressController {
     try {
       const { enrollmentId, lessonId } = req.params;
       const { isCompleted } = req.body;
-      const result = progressService.updateLessonProgress(req.user, enrollmentId, lessonId, isCompleted);
+      const result = await progressService.updateLessonProgress(req.user, enrollmentId, lessonId, isCompleted);
 
       res.status(200).json({
         success: true,
@@ -20,7 +20,7 @@ export class ProgressController {
   async getProgress(req, res, next) {
     try {
       const { enrollmentId } = req.params;
-      const result = progressService.getProgress(req.user, enrollmentId);
+      const result = await progressService.getProgress(req.user, enrollmentId);
 
       res.status(200).json({
         success: true,

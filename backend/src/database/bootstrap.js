@@ -47,21 +47,21 @@ export async function bootstrapAdmin(db, { email, password, fullName = 'Platform
 
   const passwordHash = await bcrypt.hash(password, 12);
   const now = new Date().toISOString();
-  const existing = db.prepare('SELECT id FROM users WHERE lower(email) = ?').get(normalizedEmail);
+  const existing = await db.prepare('SELECT id FROM users WHERE lower(email) = ?').get(normalizedEmail);
 
   if (existing) {
-    db.prepare("UPDATE users SET role = 'admin', password_hash = ?, is_active = 1, updated_at = ? WHERE id = ?")
+    await db.prepare("UPDATE users SET role = 'admin', password_hash = ?, is_active = 1, updated_at = ? WHERE id = ?")
       .run(passwordHash, now, existing.id);
-    logAuditEvent(null, 'ADMIN_BOOTSTRAPPED', 'user', existing.id, { email: normalizedEmail, action: 'promoted' });
+    await logAuditEvent(null, 'ADMIN_BOOTSTRAPPED', 'user', existing.id, { email: normalizedEmail, action: 'promoted' });
     return { action: 'promoted', id: existing.id, email: normalizedEmail };
   }
 
   const id = crypto.randomUUID();
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO users (id, full_name, email, password_hash, role, is_active, created_at, updated_at)
     VALUES (?, ?, ?, ?, 'admin', 1, ?, ?)
   `).run(id, fullName, normalizedEmail, passwordHash, now, now);
-  logAuditEvent(null, 'ADMIN_BOOTSTRAPPED', 'user', id, { email: normalizedEmail, action: 'created' });
+  await logAuditEvent(null, 'ADMIN_BOOTSTRAPPED', 'user', id, { email: normalizedEmail, action: 'created' });
   return { action: 'created', id, email: normalizedEmail };
 }
 
@@ -69,12 +69,12 @@ export async function bootstrapAdmin(db, { email, password, fullName = 'Platform
 export async function deactivateDemoAccounts(db) {
   const disabled = [];
   for (const account of DEMO_ACCOUNTS) {
-    const user = db
+    const user = await db
       .prepare('SELECT id, password_hash FROM users WHERE lower(email) = ? AND is_active = 1')
       .get(account.email);
     if (user && (await bcrypt.compare(account.password, user.password_hash))) {
-      db.prepare('UPDATE users SET is_active = 0, updated_at = ? WHERE id = ?').run(new Date().toISOString(), user.id);
-      logAuditEvent(null, 'DEMO_ACCOUNT_DEACTIVATED', 'user', user.id, { email: account.email });
+      await db.prepare('UPDATE users SET is_active = 0, updated_at = ? WHERE id = ?').run(new Date().toISOString(), user.id);
+      await logAuditEvent(null, 'DEMO_ACCOUNT_DEACTIVATED', 'user', user.id, { email: account.email });
       disabled.push(account.email);
     }
   }
@@ -89,7 +89,7 @@ export async function deactivateDemoAccounts(db) {
 
 // Makes sure production has an admin without ever falling back to a known password.
 export async function ensureAdminAccount(db, cfg = config) {
-  const activeAdmin = db.prepare("SELECT id FROM users WHERE role = 'admin' AND is_active = 1 LIMIT 1").get();
+  const activeAdmin = await db.prepare("SELECT id FROM users WHERE role = 'admin' AND is_active = 1 LIMIT 1").get();
   if (activeAdmin) {
     return null;
   }

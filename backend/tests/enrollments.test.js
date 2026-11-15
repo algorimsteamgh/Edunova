@@ -12,8 +12,8 @@ describe('Scenarios 3 & 4: Enrollment Processing & Duplicate Prevention', () => 
     tokens = env.tokens;
   });
 
-  afterAll(() => {
-    teardownTestEnvironment();
+  afterAll(async () => {
+    await teardownTestEnvironment();
   });
 
   it('Scenario 3: allows a student to enroll in a published course (HTTP 201)', async () => {

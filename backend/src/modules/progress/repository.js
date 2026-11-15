@@ -1,14 +1,14 @@
 import { getDatabase } from '../../database/index.js';
 
 export class ProgressRepository {
-  findLessonProgress(enrollmentId, lessonId) {
+  async findLessonProgress(enrollmentId, lessonId) {
     const db = getDatabase();
-    return db.prepare('SELECT * FROM lesson_progress WHERE enrollment_id = ? AND lesson_id = ?').get(enrollmentId, lessonId);
+    return await db.prepare('SELECT * FROM lesson_progress WHERE enrollment_id = ? AND lesson_id = ?').get(enrollmentId, lessonId);
   }
 
-  upsertLessonProgress({ id, enrollmentId, lessonId, isCompleted, completedAt, updatedAt }) {
+  async upsertLessonProgress({ id, enrollmentId, lessonId, isCompleted, completedAt, updatedAt }) {
     const db = getDatabase();
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO lesson_progress (id, enrollment_id, lesson_id, is_completed, completed_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(enrollment_id, lesson_id) DO UPDATE SET
@@ -20,13 +20,13 @@ export class ProgressRepository {
     return this.findLessonProgress(enrollmentId, lessonId);
   }
 
-  countPublishedLessons(courseId) {
+  async countPublishedLessons(courseId) {
     const db = getDatabase();
-    const row = db.prepare("SELECT COUNT(*) AS total FROM lessons WHERE course_id = ? AND status = 'published'").get(courseId);
+    const row = await db.prepare("SELECT COUNT(*) AS total FROM lessons WHERE course_id = ? AND status = 'published'").get(courseId);
     return row ? row.total : 0;
   }
 
-  countCompletedLessons(enrollmentId, courseId) {
+  async countCompletedLessons(enrollmentId, courseId) {
     const db = getDatabase();
     const query = `
       SELECT COUNT(*) AS completed 
@@ -37,11 +37,11 @@ export class ProgressRepository {
         AND l.course_id = ? 
         AND l.status = 'published'
     `;
-    const row = db.prepare(query).get(enrollmentId, courseId);
+    const row = await db.prepare(query).get(enrollmentId, courseId);
     return row ? row.completed : 0;
   }
 
-  getProgressSummary(enrollmentId) {
+  async getProgressSummary(enrollmentId) {
     const db = getDatabase();
     const query = `
       SELECT 
@@ -56,7 +56,7 @@ export class ProgressRepository {
       FROM enrollments e
       WHERE e.id = ?
     `;
-    return db.prepare(query).get(enrollmentId);
+    return await db.prepare(query).get(enrollmentId);
   }
 }
 

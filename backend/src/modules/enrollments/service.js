@@ -6,8 +6,8 @@ import { getDatabase } from '../../database/index.js';
 import { logAuditEvent } from '../../utils/auditLogger.js';
 
 export class EnrollmentService {
-  enroll(studentId, courseId) {
-    const course = courseRepository.findById(courseId);
+  async enroll(studentId, courseId) {
+    const course = await courseRepository.findById(courseId);
     if (!course) {
       throw new NotFoundError('Course not found');
     }
@@ -20,13 +20,13 @@ export class EnrollmentService {
     const enrollmentId = crypto.randomUUID();
     const enrolledAt = new Date().toISOString();
 
-    const enrollTx = db.transaction(() => {
-      const existing = enrollmentRepository.findByStudentAndCourse(studentId, courseId);
+    return db.transaction(async () => {
+      const existing = await enrollmentRepository.findByStudentAndCourse(studentId, courseId);
       if (existing) {
         throw new ConflictError('You are already enrolled in this course', { enrollmentId: existing.id }, 'ALREADY_ENROLLED');
       }
 
-      const newEnrollment = enrollmentRepository.createEnrollment({
+      const newEnrollment = await enrollmentRepository.createEnrollment({
         id: enrollmentId,
         studentId,
         courseId,
@@ -34,15 +34,14 @@ export class EnrollmentService {
         status: 'active',
       });
 
-      logAuditEvent(studentId, 'COURSE_ENROLLED', 'enrollment', enrollmentId, { courseId });
+      await logAuditEvent(studentId, 'COURSE_ENROLLED', 'enrollment', enrollmentId, { courseId });
       return newEnrollment;
     });
 
-    return enrollTx();
   }
 
-  getMyEnrollments(studentId) {
-    const rows = enrollmentRepository.findByStudent(studentId);
+  async getMyEnrollments(studentId) {
+    const rows = await enrollmentRepository.findByStudent(studentId);
 
     return rows.map((row) => {
       const total = row.total_lessons || 0;
@@ -58,8 +57,8 @@ export class EnrollmentService {
     });
   }
 
-  getEnrollmentDetails(studentId, enrollmentId) {
-    const enrollment = enrollmentRepository.findById(enrollmentId);
+  async getEnrollmentDetails(studentId, enrollmentId) {
+    const enrollment = await enrollmentRepository.findById(enrollmentId);
     if (!enrollment) {
       throw new NotFoundError('Enrollment not found');
     }
@@ -69,7 +68,7 @@ export class EnrollmentService {
     }
 
     const db = getDatabase();
-    const lessons = db
+    const lessons = await db
       .prepare(`
         SELECT 
           l.id, 

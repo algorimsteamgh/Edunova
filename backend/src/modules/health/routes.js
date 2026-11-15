@@ -11,21 +11,12 @@ router.get('/live', (_req, res) => {
   });
 });
 
-router.get('/ready', (_req, res) => {
+router.get('/ready', async (_req, res) => {
   try {
     const db = getDatabase();
-    const quickCheck = db.pragma('quick_check');
-    const isDbOk = quickCheck.length === 1 && quickCheck[0].quick_check === 'ok';
-
-    const lastMigration = db.prepare('SELECT version FROM schema_migrations ORDER BY applied_at DESC LIMIT 1').get();
-
-    if (!isDbOk) {
-      return res.status(503).json({
-        status: 'DOWN',
-        database: 'CORRUPTED',
-        details: quickCheck,
-      });
-    }
+    const lastMigration = await db
+      .prepare('SELECT version FROM schema_migrations ORDER BY applied_at DESC LIMIT 1')
+      .get();
 
     res.status(200).json({
       status: 'READY',

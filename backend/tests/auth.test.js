@@ -12,8 +12,8 @@ describe('Scenario 1: Authentication & Authorization Flow', () => {
     tokens = env.tokens;
   });
 
-  afterAll(() => {
-    teardownTestEnvironment();
+  afterAll(async () => {
+    await teardownTestEnvironment();
   });
 
   it('allows a student to register successfully with valid credentials', async () => {

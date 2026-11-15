@@ -16,7 +16,7 @@ export async function seedDatabase(customDb = null) {
   const db = customDb || getDatabase();
 
   // Run migrations first to ensure schema and video columns exist
-  runMigrations(db);
+  await runMigrations(db);
 
   logger.info('Seeding database with verified educational courses and YouTube video lessons');
 
@@ -35,18 +35,18 @@ export async function seedDatabase(customDb = null) {
     student3: 'u-stud-03',
   };
 
-  const seedTransaction = db.transaction(() => {
+  await db.transaction(async (db) => {
     // Clean up in reverse foreign-key order
-    db.prepare('DELETE FROM audit_logs').run();
-    db.prepare('DELETE FROM lesson_progress').run();
-    db.prepare('DELETE FROM enrollments').run();
-    db.prepare('DELETE FROM lessons').run();
-    db.prepare('DELETE FROM courses').run();
+    await db.prepare('DELETE FROM audit_logs').run();
+    await db.prepare('DELETE FROM lesson_progress').run();
+    await db.prepare('DELETE FROM enrollments').run();
+    await db.prepare('DELETE FROM lessons').run();
+    await db.prepare('DELETE FROM courses').run();
     // ponytail: delete only synthetic seed users to preserve registered students on re-seed. Upgrade path: seed migration versioning table.
-    db.prepare("DELETE FROM users WHERE id IN ('u-admin-01', 'u-inst-01', 'u-stud-01', 'u-stud-02', 'u-stud-03')").run();
+    await db.prepare("DELETE FROM users WHERE id IN ('u-admin-01', 'u-inst-01', 'u-stud-01', 'u-stud-02', 'u-stud-03')").run();
 
     // 1. Seed Users
-    const insertUser = db.prepare(`
+    const insertUser = await db.prepare(`
       INSERT INTO users (id, full_name, email, password_hash, role, is_active, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(email) DO UPDATE SET
@@ -54,14 +54,14 @@ export async function seedDatabase(customDb = null) {
         updated_at = excluded.updated_at
     `);
 
-    insertUser.run(users.admin, 'System Administrator', 'admin@learnsphere.io', adminPasswordHash, 'admin', 1, now, now);
-    insertUser.run(users.instructor, 'Prof. Elena Rostova', 'elena.rostova@learnsphere.io', instructorPasswordHash, 'admin', 1, now, now);
-    insertUser.run(users.student1, 'Alex Mercer', 'alex.mercer@learnsphere.io', studentPasswordHash, 'student', 1, now, now);
-    insertUser.run(users.student2, 'Maria Santos', 'maria.santos@learnsphere.io', studentPasswordHash, 'student', 1, now, now);
-    insertUser.run(users.student3, 'David Kim', 'david.kim@learnsphere.io', studentPasswordHash, 'student', 1, now, now);
+    await insertUser.run(users.admin, 'System Administrator', 'admin@learnsphere.io', adminPasswordHash, 'admin', 1, now, now);
+    await insertUser.run(users.instructor, 'Prof. Elena Rostova', 'elena.rostova@learnsphere.io', instructorPasswordHash, 'admin', 1, now, now);
+    await insertUser.run(users.student1, 'Alex Mercer', 'alex.mercer@learnsphere.io', studentPasswordHash, 'student', 1, now, now);
+    await insertUser.run(users.student2, 'Maria Santos', 'maria.santos@learnsphere.io', studentPasswordHash, 'student', 1, now, now);
+    await insertUser.run(users.student3, 'David Kim', 'david.kim@learnsphere.io', studentPasswordHash, 'student', 1, now, now);
 
     // 2. Seed Courses
-    const insertCourse = db.prepare(`
+    const insertCourse = await db.prepare(`
       INSERT INTO courses (
         id, title, description, category, instructor_id,
         thumbnail_url, status, estimated_duration, preview_video_id,
@@ -80,7 +80,7 @@ export async function seedDatabase(customDb = null) {
       c_legacy: 'c-legacy-07',
     };
 
-    insertCourse.run(
+    await insertCourse.run(
       courses.c_react,
       'React.js Fundamentals & Modern Frontend Architecture',
       'Master the modern React 19 ecosystem from the ground up: components, props, hooks, custom state management, React Router 7, and building scalable reactive single-page applications.',
@@ -94,7 +94,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertCourse.run(
+    await insertCourse.run(
       courses.c_node,
       'Node.js and Express.js Backend Architecture',
       'Build enterprise-grade server-side applications and RESTful APIs using Node.js event-driven runtime, Express middleware pipelines, JWT auth, and centralized error handling.',
@@ -108,7 +108,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertCourse.run(
+    await insertCourse.run(
       courses.c_db,
       'SQL and Relational Database Engineering Fundamentals',
       'Deep dive into relational modeling, Boyce-Codd normal forms, ACID transactions, complex multi-table joins, B-Tree indexes, and SQLite WAL concurrency.',
@@ -122,7 +122,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertCourse.run(
+    await insertCourse.run(
       courses.c_js,
       'Modern JavaScript Deep Dive & ES Modules',
       'Understand core JavaScript mechanics from memory allocation, execution contexts, and closures to asynchronous Promises, Event Loop, and modular ES architectures.',
@@ -136,7 +136,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertCourse.run(
+    await insertCourse.run(
       courses.c_cloud,
       'Cloud Native Systems & GCP Cloud Run Deployment',
       'Containerize enterprise services with Docker multi-stage builds, understand ephemeral filesystems, configure secret managers, and automate CI/CD.',
@@ -150,7 +150,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertCourse.run(
+    await insertCourse.run(
       courses.c_arch,
       'High-Concurrency Distributed Systems & Event Streaming',
       'Advanced distributed locking, message queues with Kafka, idempotent workers, and microservices decomposition.',
@@ -164,7 +164,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertCourse.run(
+    await insertCourse.run(
       courses.c_legacy,
       'Legacy Codebase Modernization & Refactoring Patterns',
       'Tactical migration patterns for unravelling monolithic spaghetti code and implementing modular boundary contracts.',
@@ -179,7 +179,7 @@ export async function seedDatabase(customDb = null) {
     );
 
     // 3. Seed Lessons with verified YouTube videos
-    const insertLesson = db.prepare(`
+    const insertLesson = await db.prepare(`
       INSERT INTO lessons (
         id, course_id, title, content, position, status,
         video_id, video_url, duration, description, channel_name, is_preview,
@@ -189,7 +189,7 @@ export async function seedDatabase(customDb = null) {
     `);
 
     // Course 1: React.js Fundamentals (5 lessons)
-    insertLesson.run(
+    await insertLesson.run(
       'l-react-01',
       courses.c_react,
       '1. Introduction to React & Project Setup',
@@ -206,7 +206,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-react-02',
       courses.c_react,
       '2. Components and Props Architecture',
@@ -223,7 +223,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-react-03',
       courses.c_react,
       '3. State and React Hooks (useState & useEffect)',
@@ -240,7 +240,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-react-04',
       courses.c_react,
       '4. Single-Page Navigation with React Router',
@@ -257,7 +257,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-react-05',
       courses.c_react,
       '5. Building a Full-Featured React Project',
@@ -275,7 +275,7 @@ export async function seedDatabase(customDb = null) {
     );
 
     // Course 2: Node.js and Express.js (5 lessons)
-    insertLesson.run(
+    await insertLesson.run(
       'l-node-01',
       courses.c_node,
       '1. Introduction to Node.js & V8 Event Loop',
@@ -292,7 +292,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-node-02',
       courses.c_node,
       '2. Express.js Fundamentals & Middleware Pipeline',
@@ -309,7 +309,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-node-03',
       courses.c_node,
       '3. REST API Development & Layered Architecture',
@@ -326,7 +326,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-node-04',
       courses.c_node,
       '4. Authentication, Hashing & JWT Protocols',
@@ -343,7 +343,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-node-05',
       courses.c_node,
       '5. Centralized Error Handling & Production Robustness',
@@ -361,7 +361,7 @@ export async function seedDatabase(customDb = null) {
     );
 
     // Course 3: SQL and Database Fundamentals (5 lessons)
-    insertLesson.run(
+    await insertLesson.run(
       'l-db-01',
       courses.c_db,
       '1. SQL Basics & Relational Modeling',
@@ -378,7 +378,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-db-02',
       courses.c_db,
       '2. SELECT, INSERT, UPDATE, and DELETE Operations',
@@ -395,7 +395,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-db-03',
       courses.c_db,
       '3. Joins, Foreign Keys & Entity Relationships',
@@ -412,7 +412,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-db-04',
       courses.c_db,
       '4. Database Normalization (1NF, 2NF, 3NF, BCNF)',
@@ -429,7 +429,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-db-05',
       courses.c_db,
       '5. Indexes, B-Trees & Query Optimization',
@@ -447,7 +447,7 @@ export async function seedDatabase(customDb = null) {
     );
 
     // Course 4: JavaScript Fundamentals (5 lessons)
-    insertLesson.run(
+    await insertLesson.run(
       'l-js-01',
       courses.c_js,
       '1. Variables, Data Types, and Memory Model',
@@ -464,7 +464,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-js-02',
       courses.c_js,
       '2. Functions, Scope, and Closures',
@@ -481,7 +481,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-js-03',
       courses.c_js,
       '3. Arrays, Objects, and Destructuring',
@@ -498,7 +498,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-js-04',
       courses.c_js,
       '4. Promises, Async/Await, and the Event Loop',
@@ -515,7 +515,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-js-05',
       courses.c_js,
       '5. Native ES Modules & Modern Build Tooling',
@@ -533,7 +533,7 @@ export async function seedDatabase(customDb = null) {
     );
 
     // Course 5: Cloud Native Systems
-    insertLesson.run(
+    await insertLesson.run(
       'l-cloud-01',
       courses.c_cloud,
       '1. Docker Multi-Stage Containerization',
@@ -550,7 +550,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-cloud-02',
       courses.c_cloud,
       '2. Deploying to Google Cloud Run and Persistence Decisions',
@@ -567,7 +567,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-cloud-03',
       courses.c_cloud,
       '3. Kubernetes Core Architecture & Pod Orchestration',
@@ -585,7 +585,7 @@ export async function seedDatabase(customDb = null) {
     );
 
     // Course 6: Distributed Systems
-    insertLesson.run(
+    await insertLesson.run(
       'l-arch-01',
       courses.c_arch,
       '1. Distributed Systems & System Design Fundamentals',
@@ -602,7 +602,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-arch-02',
       courses.c_arch,
       '2. Event Streaming with Apache Kafka',
@@ -619,7 +619,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-arch-03',
       courses.c_arch,
       '3. Distributed Caching & Redis at Scale',
@@ -637,7 +637,7 @@ export async function seedDatabase(customDb = null) {
     );
 
     // Course 7: Legacy Modernization
-    insertLesson.run(
+    await insertLesson.run(
       'l-legacy-01',
       courses.c_legacy,
       '1. Tactical Monolith Decomposition & Clean Architecture',
@@ -654,7 +654,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-legacy-02',
       courses.c_legacy,
       '2. Refactoring Code Smells & Design Patterns',
@@ -671,7 +671,7 @@ export async function seedDatabase(customDb = null) {
       now
     );
 
-    insertLesson.run(
+    await insertLesson.run(
       'l-legacy-03',
       courses.c_legacy,
       '3. Zero-Downtime Migration Patterns',
@@ -689,7 +689,7 @@ export async function seedDatabase(customDb = null) {
     );
 
     // 4. Seed Enrollments
-    const insertEnrollment = db.prepare(`
+    const insertEnrollment = await db.prepare(`
       INSERT INTO enrollments (id, student_id, course_id, enrolled_at, status)
       VALUES (?, ?, ?, ?, ?)
     `);
@@ -702,48 +702,47 @@ export async function seedDatabase(customDb = null) {
       david_node: 'e-david-node',
     };
 
-    insertEnrollment.run(enrollments.alex_react, users.student1, courses.c_react, now, 'active');
-    insertEnrollment.run(enrollments.alex_db, users.student1, courses.c_db, now, 'active');
-    insertEnrollment.run(enrollments.maria_react, users.student2, courses.c_react, now, 'completed'); // Completed all 5
-    insertEnrollment.run(enrollments.maria_cloud, users.student2, courses.c_cloud, now, 'active');
-    insertEnrollment.run(enrollments.david_node, users.student3, courses.c_node, now, 'active');
+    await insertEnrollment.run(enrollments.alex_react, users.student1, courses.c_react, now, 'active');
+    await insertEnrollment.run(enrollments.alex_db, users.student1, courses.c_db, now, 'active');
+    await insertEnrollment.run(enrollments.maria_react, users.student2, courses.c_react, now, 'completed'); // Completed all 5
+    await insertEnrollment.run(enrollments.maria_cloud, users.student2, courses.c_cloud, now, 'active');
+    await insertEnrollment.run(enrollments.david_node, users.student3, courses.c_node, now, 'active');
 
     // 5. Seed Lesson Progress
-    const insertProgress = db.prepare(`
+    const insertProgress = await db.prepare(`
       INSERT INTO lesson_progress (id, enrollment_id, lesson_id, is_completed, completed_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
 
     // Alex on React: completed lessons 1 & 2 (2/5 = 40%)
-    insertProgress.run('lp-01', enrollments.alex_react, 'l-react-01', 1, now, now);
-    insertProgress.run('lp-02', enrollments.alex_react, 'l-react-02', 1, now, now);
+    await insertProgress.run('lp-01', enrollments.alex_react, 'l-react-01', 1, now, now);
+    await insertProgress.run('lp-02', enrollments.alex_react, 'l-react-02', 1, now, now);
 
     // Maria on React: completed all 5 lessons (5/5 = 100% -> completed)
-    insertProgress.run('lp-03', enrollments.maria_react, 'l-react-01', 1, now, now);
-    insertProgress.run('lp-04', enrollments.maria_react, 'l-react-02', 1, now, now);
-    insertProgress.run('lp-05', enrollments.maria_react, 'l-react-03', 1, now, now);
-    insertProgress.run('lp-06', enrollments.maria_react, 'l-react-04', 1, now, now);
-    insertProgress.run('lp-07', enrollments.maria_react, 'l-react-05', 1, now, now);
+    await insertProgress.run('lp-03', enrollments.maria_react, 'l-react-01', 1, now, now);
+    await insertProgress.run('lp-04', enrollments.maria_react, 'l-react-02', 1, now, now);
+    await insertProgress.run('lp-05', enrollments.maria_react, 'l-react-03', 1, now, now);
+    await insertProgress.run('lp-06', enrollments.maria_react, 'l-react-04', 1, now, now);
+    await insertProgress.run('lp-07', enrollments.maria_react, 'l-react-05', 1, now, now);
 
     // David on Node.js: completed lesson 1 (1/5 = 20%)
-    insertProgress.run('lp-08', enrollments.david_node, 'l-node-01', 1, now, now);
+    await insertProgress.run('lp-08', enrollments.david_node, 'l-node-01', 1, now, now);
 
     // 6. Seed Audit Logs
-    const insertAudit = db.prepare(`
+    const insertAudit = await db.prepare(`
       INSERT INTO audit_logs (id, actor_user_id, action, entity_type, entity_id, metadata, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
-    insertAudit.run(crypto.randomUUID(), users.admin, 'DATABASE_INITIALIZED', 'system', 'db-init', JSON.stringify({ version: '2.0.0' }), now);
-    insertAudit.run(crypto.randomUUID(), users.admin, 'USER_CREATED', 'user', users.instructor, JSON.stringify({ role: 'admin' }), now);
-    insertAudit.run(crypto.randomUUID(), users.instructor, 'COURSE_CREATED', 'course', courses.c_react, JSON.stringify({ title: 'React.js Fundamentals' }), now);
-    insertAudit.run(crypto.randomUUID(), users.student2, 'ENROLLMENT_COMPLETED', 'enrollment', enrollments.maria_react, JSON.stringify({ course_id: courses.c_react, progress: 100 }), now);
+    await insertAudit.run(crypto.randomUUID(), users.admin, 'DATABASE_INITIALIZED', 'system', 'db-init', JSON.stringify({ version: '2.0.0' }), now);
+    await insertAudit.run(crypto.randomUUID(), users.admin, 'USER_CREATED', 'user', users.instructor, JSON.stringify({ role: 'admin' }), now);
+    await insertAudit.run(crypto.randomUUID(), users.instructor, 'COURSE_CREATED', 'course', courses.c_react, JSON.stringify({ title: 'React.js Fundamentals' }), now);
+    await insertAudit.run(crypto.randomUUID(), users.student2, 'ENROLLMENT_COMPLETED', 'enrollment', enrollments.maria_react, JSON.stringify({ course_id: courses.c_react, progress: 100 }), now);
   });
 
-  seedTransaction();
 
   // Seed the 12 modern domain courses with full topic/subtopic/lesson hierarchy
-  seedNewCourses(db);
+  await seedNewCourses(db);
 
   logger.info('Synthetic database seeding completed successfully');
 }

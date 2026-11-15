@@ -1,12 +1,12 @@
 import { getDatabase } from '../../database/index.js';
 
 export class EnrollmentRepository {
-  findByStudentAndCourse(studentId, courseId) {
+  async findByStudentAndCourse(studentId, courseId) {
     const db = getDatabase();
-    return db.prepare('SELECT * FROM enrollments WHERE student_id = ? AND course_id = ?').get(studentId, courseId);
+    return await db.prepare('SELECT * FROM enrollments WHERE student_id = ? AND course_id = ?').get(studentId, courseId);
   }
 
-  findById(id) {
+  async findById(id) {
     const db = getDatabase();
     const query = `
       SELECT 
@@ -26,10 +26,10 @@ export class EnrollmentRepository {
       LEFT JOIN users u ON c.instructor_id = u.id
       WHERE e.id = ?
     `;
-    return db.prepare(query).get(id);
+    return await db.prepare(query).get(id);
   }
 
-  findByStudent(studentId) {
+  async findByStudent(studentId) {
     const db = getDatabase();
     const query = `
       SELECT 
@@ -54,23 +54,23 @@ export class EnrollmentRepository {
       WHERE e.student_id = ?
       ORDER BY e.enrolled_at DESC
     `;
-    return db.prepare(query).all(studentId);
+    return await db.prepare(query).all(studentId);
   }
 
-  createEnrollment({ id, studentId, courseId, enrolledAt, status = 'active' }) {
+  async createEnrollment({ id, studentId, courseId, enrolledAt, status = 'active' }) {
     const db = getDatabase();
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO enrollments (id, student_id, course_id, enrolled_at, status)
       VALUES (?, ?, ?, ?, ?)
     `).run(id, studentId, courseId, enrolledAt, status);
 
-    return this.findById(id);
+    return await this.findById(id);
   }
 
-  updateStatus(id, status) {
+  async updateStatus(id, status) {
     const db = getDatabase();
-    db.prepare('UPDATE enrollments SET status = ? WHERE id = ?').run(status, id);
-    return this.findById(id);
+    await db.prepare('UPDATE enrollments SET status = ? WHERE id = ?').run(status, id);
+    return await this.findById(id);
   }
 }
 

@@ -11,6 +11,26 @@ jobs:
     name: Lint, Test, Migrate & Build
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: edunova_ci
+          POSTGRES_USER: edunova
+          POSTGRES_PASSWORD: edunova-ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U edunova -d edunova_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: edunova_ci
+      PGUSER: edunova
+      PGPASSWORD: edunova-ci
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -38,7 +58,7 @@ jobs:
       - name: Seed Baseline Synthetic Data
         run: npm --prefix backend run seed
 
-      - name: Run SQLite Relational Integrity Checks
+      - name: Run PostgreSQL Relational Integrity Checks
         run: npm --prefix backend run db:integrity
 
       - name: Run Backend Automated Tests (Vitest)

@@ -12,8 +12,8 @@ describe('Scenario 2: Course Management & RBAC Protection', () => {
     tokens = env.tokens;
   });
 
-  afterAll(() => {
-    teardownTestEnvironment();
+  afterAll(async () => {
+    await teardownTestEnvironment();
   });
 
   it('allows an administrator to create a new course (HTTP 201)', async () => {

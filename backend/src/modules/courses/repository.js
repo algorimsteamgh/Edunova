@@ -1,7 +1,7 @@
 import { getDatabase } from '../../database/index.js';
 
 export class CourseRepository {
-  listCourses({ search, category, status, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 12 }) {
+  async listCourses({ search, category, status, sortBy = 'created_at', sortOrder = 'desc', page = 1, limit = 12 }) {
     const db = getDatabase();
     const whereClauses = [];
     const params = [];
@@ -17,7 +17,7 @@ export class CourseRepository {
     }
 
     if (search) {
-      whereClauses.push('(c.title LIKE ? OR c.description LIKE ?)');
+      whereClauses.push('(c.title ILIKE ? OR c.description ILIKE ?)');
       params.push(`%${search}%`, `%${search}%`);
     }
 
@@ -25,7 +25,7 @@ export class CourseRepository {
     const offset = (page - 1) * limit;
 
     const countQuery = `SELECT COUNT(*) AS total FROM courses c ${whereSql}`;
-    const totalRow = db.prepare(countQuery).get(...params);
+    const totalRow = await db.prepare(countQuery).get(...params);
     const total = totalRow ? totalRow.total : 0;
 
     const dataQuery = `
@@ -54,7 +54,7 @@ export class CourseRepository {
       LIMIT ? OFFSET ?
     `;
 
-    const courses = db.prepare(dataQuery).all(...params, limit, offset);
+    const courses = await db.prepare(dataQuery).all(...params, limit, offset);
 
     return {
       courses,
@@ -67,7 +67,7 @@ export class CourseRepository {
     };
   }
 
-  findById(id) {
+  async findById(id) {
     const db = getDatabase();
     const query = `
       SELECT 
@@ -92,10 +92,10 @@ export class CourseRepository {
       LEFT JOIN users u ON c.instructor_id = u.id
       WHERE c.id = ?
     `;
-    return db.prepare(query).get(id);
+    return await db.prepare(query).get(id);
   }
 
-  createCourse({
+  async createCourse({
     id,
     title,
     description,
@@ -111,7 +111,7 @@ export class CourseRepository {
     updatedAt,
   }) {
     const db = getDatabase();
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO courses (
         id, title, description, category, instructor_id,
         thumbnail_url, status, estimated_duration, preview_video_id,
@@ -135,10 +135,10 @@ export class CourseRepository {
       updatedAt
     );
 
-    return this.findById(id);
+    return await this.findById(id);
   }
 
-  updateCourse(id, fields) {
+  async updateCourse(id, fields) {
     const db = getDatabase();
     const setClauses = [];
     const params = [];
@@ -169,24 +169,24 @@ export class CourseRepository {
     params.push(new Date().toISOString());
     params.push(id);
 
-    db.prepare(`UPDATE courses SET ${setClauses.join(', ')} WHERE id = ?`).run(...params);
-    return this.findById(id);
+    await db.prepare(`UPDATE courses SET ${setClauses.join(', ')} WHERE id = ?`).run(...params);
+    return await this.findById(id);
   }
 
-  deleteCourse(id) {
+  async deleteCourse(id) {
     const db = getDatabase();
-    return db.prepare('DELETE FROM courses WHERE id = ?').run(id);
+    return await db.prepare('DELETE FROM courses WHERE id = ?').run(id);
   }
 
-  countEnrollments(courseId) {
+  async countEnrollments(courseId) {
     const db = getDatabase();
-    const row = db.prepare('SELECT COUNT(*) AS count FROM enrollments WHERE course_id = ?').get(courseId);
+    const row = await db.prepare('SELECT COUNT(*) AS count FROM enrollments WHERE course_id = ?').get(courseId);
     return row ? row.count : 0;
   }
 
-  listCategories() {
+  async listCategories() {
     const db = getDatabase();
-    const rows = db.prepare('SELECT DISTINCT category FROM courses ORDER BY category ASC').all();
+    const rows = await db.prepare('SELECT DISTINCT category FROM courses ORDER BY category ASC').all();
     return rows.map((r) => r.category);
   }
 }

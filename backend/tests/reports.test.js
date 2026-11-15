@@ -17,8 +17,8 @@ describe('Scenario 12: Admin Telemetry & Reporting Accuracy', () => {
       .set('Authorization', `Bearer ${tokens.student}`);
   });
 
-  afterAll(() => {
-    teardownTestEnvironment();
+  afterAll(async () => {
+    await teardownTestEnvironment();
   });
 
   it('Scenario 12: enrollment reports accurately match database records', async () => {

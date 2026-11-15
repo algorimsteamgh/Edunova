@@ -1,4 +1,20 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: edunova-db
+    environment:
+      - POSTGRES_DB=learnsphere
+      - POSTGRES_USER=edunova
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-edunova-local-only}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edunova -d learnsphere"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: ./backend
@@ -9,7 +25,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=8080
-      - DATABASE_PATH=/app/data/learnsphere.sqlite
+      - PGHOST=db
+      - PGDATABASE=learnsphere
+      - PGUSER=edunova
+      - PGPASSWORD=${POSTGRES_PASSWORD:-edunova-local-only}
       # Secrets come from your shell or a local .env file (see .env.example); compose refuses to start without one.
       - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET (openssl rand -base64 48) in .env}
       - ADMIN_EMAIL=${ADMIN_EMAIL:-}
@@ -17,9 +36,9 @@ services:
       # true loads demo accounts with published passwords; only for a throwaway local demo.
       - SEED_DEMO_DATA=${SEED_DEMO_DATA:-false}
       - CORS_ORIGIN=*
-    volumes:
-      - ./backend/data:/app/data
-      - ./backend/backups:/app/backups
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health/live"]
@@ -38,6 +57,9 @@ services:
       backend:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  db-data:
 
 networks:
   default:
