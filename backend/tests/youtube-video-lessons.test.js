@@ -16,8 +16,8 @@ describe('YouTube Video Lessons & Course Player Integration', () => {
     tokens = env.tokens;
   });
 
-  afterAll(() => {
-    teardownTestEnvironment();
+  afterAll(async () => {
+    await teardownTestEnvironment();
   });
 
   describe('1. YouTube URL Parsing and Validation Utility', () => {
@@ -267,11 +267,11 @@ describe('YouTube Video Lessons & Course Player Integration', () => {
   });
 
   describe('6. Database Migration Idempotency & Data Preservation', () => {
-    it('running migrations repeatedly preserves all records without error', () => {
-      const newlyApplied = runMigrations(db);
+    it('running migrations repeatedly preserves all records without error', async () => {
+      const newlyApplied = await runMigrations(db);
       expect(newlyApplied).toEqual([]);
 
-      const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+      const userCount = (await db.prepare('SELECT COUNT(*) as count FROM users').get()).count;
       expect(userCount).toBeGreaterThan(0);
     });
   });

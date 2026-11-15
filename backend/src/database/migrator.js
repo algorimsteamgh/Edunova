@@ -1,27 +1,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getDatabase } from './index.js';
+import { getDatabase, closeDatabase } from './index.js';
 import { logger } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const migrationsDir = path.resolve(__dirname, '../../migrations');
 
-export function runMigrations(customDb = null) {
+// Any fixed number; makes two API tasks starting together apply migrations one at a time.
+const MIGRATION_LOCK_ID = 20261116;
+
+export async function runMigrations(customDb = null) {
   const db = customDb || getDatabase();
-
-  // Ensure migrations tracking table exists
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-      version TEXT PRIMARY KEY,
-      applied_at TEXT NOT NULL,
-      description TEXT
-    );
-  `);
-
-  const appliedRows = db.prepare('SELECT version FROM schema_migrations ORDER BY version ASC').all();
-  const appliedVersions = new Set(appliedRows.map((r) => r.version));
 
   if (!fs.existsSync(migrationsDir)) {
     logger.warn({ migrationsDir }, 'Migrations directory does not exist');
@@ -35,34 +26,46 @@ export function runMigrations(customDb = null) {
 
   const newlyApplied = [];
 
-  for (const file of migrationFiles) {
-    const version = file.replace(/\.sql$/, '');
-    if (appliedVersions.has(version)) {
-      continue;
+  await db.transaction(async (tx) => {
+    await tx.query('SELECT pg_advisory_xact_lock($1)', [MIGRATION_LOCK_ID]);
+
+    // Same tracking table and versions as on SQLite, so a database copied from the old
+    // system (schema_migrations included) is recognised as already migrated.
+    await tx.exec(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        version TEXT PRIMARY KEY,
+        applied_at TEXT NOT NULL,
+        description TEXT
+      );
+    `);
+
+    const appliedRows = await tx.prepare('SELECT version FROM schema_migrations ORDER BY version ASC').all();
+    const appliedVersions = new Set(appliedRows.map((r) => r.version));
+
+    for (const file of migrationFiles) {
+      const version = file.replace(/\.sql$/, '');
+      if (appliedVersions.has(version)) {
+        continue;
+      }
+
+      const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+      logger.info({ version, file }, 'Executing pending database migration');
+
+      try {
+        await tx.exec(sql);
+        const appliedAt = new Date().toISOString();
+        const description = file.replace(/^[0-9]+_/, '').replace(/_/g, ' ').replace(/\.sql$/, '');
+        await tx
+          .prepare('INSERT INTO schema_migrations (version, applied_at, description) VALUES (?, ?, ?)')
+          .run(version, appliedAt, description);
+        newlyApplied.push(version);
+        logger.info({ version }, 'Successfully applied database migration');
+      } catch (err) {
+        logger.error({ version, error: err.message }, 'Failed to apply migration; transaction rolled back');
+        throw err;
+      }
     }
-
-    const filePath = path.join(migrationsDir, file);
-    const sql = fs.readFileSync(filePath, 'utf8');
-
-    logger.info({ version, file }, 'Executing pending database migration');
-
-    const applyMigration = db.transaction(() => {
-      db.exec(sql);
-      const appliedAt = new Date().toISOString();
-      const description = file.replace(/^[0-9]+_/, '').replace(/_/g, ' ').replace(/\.sql$/, '');
-      db.prepare('INSERT INTO schema_migrations (version, applied_at, description) VALUES (?, ?, ?)')
-        .run(version, appliedAt, description);
-    });
-
-    try {
-      applyMigration();
-      newlyApplied.push(version);
-      logger.info({ version }, 'Successfully applied database migration');
-    } catch (err) {
-      logger.error({ version, error: err.message }, 'Failed to apply migration; transaction rolled back');
-      throw err;
-    }
-  }
+  });
 
   if (newlyApplied.length === 0) {
     logger.info('Database schema is already up to date; 0 pending migrations');
@@ -75,12 +78,14 @@ export function runMigrations(customDb = null) {
 
 // Allow CLI execution: `node src/database/migrator.js`
 if (process.argv[1] && process.argv[1].endsWith('migrator.js')) {
-  try {
-    const applied = runMigrations();
-    console.log(`[Migrator] Applied ${applied.length} migration(s). Database is ready.`);
-    process.exit(0);
-  } catch (err) {
-    console.error('[Migrator] Migration execution error:', err);
-    process.exit(1);
-  }
+  runMigrations()
+    .then(async (applied) => {
+      console.log(`[Migrator] Applied ${applied.length} migration(s). Database is ready.`);
+      await closeDatabase();
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('[Migrator] Migration execution error:', err);
+      process.exit(1);
+    });
 }

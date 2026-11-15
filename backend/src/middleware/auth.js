@@ -3,7 +3,7 @@ import { config } from '../config/index.js';
 import { UnauthorizedError, ForbiddenError } from '../utils/errors.js';
 import { getDatabase } from '../database/index.js';
 
-export function requireAuth(req, _res, next) {
+export async function requireAuth(req, _res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return next(new UnauthorizedError('Authentication token required', null, 'MISSING_TOKEN'));
@@ -13,7 +13,7 @@ export function requireAuth(req, _res, next) {
   try {
     const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
     const db = getDatabase();
-    const user = db.prepare('SELECT id, full_name, email, role, is_active FROM users WHERE id = ?').get(decoded.sub);
+    const user = await db.prepare('SELECT id, full_name, email, role, is_active FROM users WHERE id = ?').get(decoded.sub);
 
     if (!user) {
       return next(new UnauthorizedError('User account not found', null, 'USER_NOT_FOUND'));
@@ -33,7 +33,7 @@ export function requireAuth(req, _res, next) {
   }
 }
 
-export function optionalAuth(req, _res, next) {
+export async function optionalAuth(req, _res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     req.user = null;
@@ -44,7 +44,7 @@ export function optionalAuth(req, _res, next) {
   try {
     const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
     const db = getDatabase();
-    const user = db.prepare('SELECT id, full_name, email, role, is_active FROM users WHERE id = ?').get(decoded.sub);
+    const user = await db.prepare('SELECT id, full_name, email, role, is_active FROM users WHERE id = ?').get(decoded.sub);
     req.user = user && user.is_active ? user : null;
   } catch {
     req.user = null;

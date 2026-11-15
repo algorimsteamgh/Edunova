@@ -1,18 +1,18 @@
 import { getDatabase, runIntegrityCheck } from '../../database/index.js';
 
 export class AdminRepository {
-  getSystemStats() {
+  async getSystemStats() {
     const db = getDatabase();
 
-    const totalUsers = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
-    const totalStudents = db.prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'student'").get().count;
-    const totalAdmins = db.prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'admin'").get().count;
-    const publishedCourses = db.prepare("SELECT COUNT(*) AS count FROM courses WHERE status = 'published'").get().count;
-    const totalCourses = db.prepare('SELECT COUNT(*) AS count FROM courses').get().count;
-    const totalEnrollments = db.prepare('SELECT COUNT(*) AS count FROM enrollments').get().count;
-    const completedEnrollments = db.prepare("SELECT COUNT(*) AS count FROM enrollments WHERE status = 'completed'").get().count;
+    const totalUsers = (await db.prepare('SELECT COUNT(*) AS count FROM users').get()).count;
+    const totalStudents = (await db.prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'student'").get()).count;
+    const totalAdmins = (await db.prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'admin'").get()).count;
+    const publishedCourses = (await db.prepare("SELECT COUNT(*) AS count FROM courses WHERE status = 'published'").get()).count;
+    const totalCourses = (await db.prepare('SELECT COUNT(*) AS count FROM courses').get()).count;
+    const totalEnrollments = (await db.prepare('SELECT COUNT(*) AS count FROM enrollments').get()).count;
+    const completedEnrollments = (await db.prepare("SELECT COUNT(*) AS count FROM enrollments WHERE status = 'completed'").get()).count;
 
-    const recentEnrollments = db
+    const recentEnrollments = await db
       .prepare(`
         SELECT 
           e.id, 
@@ -29,7 +29,7 @@ export class AdminRepository {
       `)
       .all();
 
-    const courseCompletionBreakdown = db
+    const courseCompletionBreakdown = await db
       .prepare(`
         SELECT 
           c.id, 
@@ -58,7 +58,7 @@ export class AdminRepository {
     };
   }
 
-  listUsers({ search, role, page = 1, limit = 20 }) {
+  async listUsers({ search, role, page = 1, limit = 20 }) {
     const db = getDatabase();
     const whereClauses = [];
     const params = [];
@@ -69,17 +69,17 @@ export class AdminRepository {
     }
 
     if (search) {
-      whereClauses.push('(full_name LIKE ? OR email LIKE ?)');
+      whereClauses.push('(full_name ILIKE ? OR email ILIKE ?)');
       params.push(`%${search}%`, `%${search}%`);
     }
 
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
     const offset = (page - 1) * limit;
 
-    const countRow = db.prepare(`SELECT COUNT(*) AS total FROM users ${whereSql}`).get(...params);
+    const countRow = await db.prepare(`SELECT COUNT(*) AS total FROM users ${whereSql}`).get(...params);
     const total = countRow ? countRow.total : 0;
 
-    const users = db
+    const users = await db
       .prepare(`
         SELECT 
           id, 
@@ -108,7 +108,7 @@ export class AdminRepository {
     };
   }
 
-  getEnrollmentsReport({ courseId, studentId, startDate, endDate, page = 1, limit = 50 }) {
+  async getEnrollmentsReport({ courseId, studentId, startDate, endDate, page = 1, limit = 50 }) {
     const db = getDatabase();
     const whereClauses = [];
     const params = [];
@@ -133,10 +133,10 @@ export class AdminRepository {
     const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
     const offset = (page - 1) * limit;
 
-    const countRow = db.prepare(`SELECT COUNT(*) AS total FROM enrollments e ${whereSql}`).get(...params);
+    const countRow = await db.prepare(`SELECT COUNT(*) AS total FROM enrollments e ${whereSql}`).get(...params);
     const total = countRow ? countRow.total : 0;
 
-    const rows = db
+    const rows = await db
       .prepare(`
         SELECT 
           e.id AS enrollment_id,
@@ -182,7 +182,7 @@ export class AdminRepository {
     };
   }
 
-  getCompletionsReport({ courseId, page = 1, limit = 50 }) {
+  async getCompletionsReport({ courseId, page = 1, limit = 50 }) {
     const db = getDatabase();
     const whereClauses = ["e.status = 'completed'"];
     const params = [];
@@ -195,10 +195,10 @@ export class AdminRepository {
     const whereSql = `WHERE ${whereClauses.join(' AND ')}`;
     const offset = (page - 1) * limit;
 
-    const countRow = db.prepare(`SELECT COUNT(*) AS total FROM enrollments e ${whereSql}`).get(...params);
+    const countRow = await db.prepare(`SELECT COUNT(*) AS total FROM enrollments e ${whereSql}`).get(...params);
     const total = countRow ? countRow.total : 0;
 
-    const rows = db
+    const rows = await db
       .prepare(`
         SELECT 
           e.id AS enrollment_id,
@@ -228,9 +228,9 @@ export class AdminRepository {
     };
   }
 
-  getProgressDetailsReport({ enrollmentId }) {
+  async getProgressDetailsReport({ enrollmentId }) {
     const db = getDatabase();
-    return db
+    return await db
       .prepare(`
         SELECT 
           e.id AS enrollment_id,
@@ -253,22 +253,22 @@ export class AdminRepository {
       .all(enrollmentId);
   }
 
-  getHealthSummary() {
+  async getHealthSummary() {
     const db = getDatabase();
-    const integrity = runIntegrityCheck(db);
-    const migrations = db.prepare('SELECT version, applied_at FROM schema_migrations ORDER BY applied_at DESC').all();
+    const integrity = await runIntegrityCheck(db);
+    const migrations = await db.prepare('SELECT version, applied_at FROM schema_migrations ORDER BY applied_at DESC').all();
 
     const counts = {
-      users: db.prepare('SELECT COUNT(*) AS count FROM users').get().count,
-      courses: db.prepare('SELECT COUNT(*) AS count FROM courses').get().count,
-      lessons: db.prepare('SELECT COUNT(*) AS count FROM lessons').get().count,
-      enrollments: db.prepare('SELECT COUNT(*) AS count FROM enrollments').get().count,
-      lesson_progress: db.prepare('SELECT COUNT(*) AS count FROM lesson_progress').get().count,
-      audit_logs: db.prepare('SELECT COUNT(*) AS count FROM audit_logs').get().count,
+      users: (await db.prepare('SELECT COUNT(*) AS count FROM users').get()).count,
+      courses: (await db.prepare('SELECT COUNT(*) AS count FROM courses').get()).count,
+      lessons: (await db.prepare('SELECT COUNT(*) AS count FROM lessons').get()).count,
+      enrollments: (await db.prepare('SELECT COUNT(*) AS count FROM enrollments').get()).count,
+      lesson_progress: (await db.prepare('SELECT COUNT(*) AS count FROM lesson_progress').get()).count,
+      audit_logs: (await db.prepare('SELECT COUNT(*) AS count FROM audit_logs').get()).count,
     };
 
     return {
-      database: 'SQLite 3 (WAL mode)',
+      database: 'PostgreSQL',
       integrity,
       tableCounts: counts,
       migrations,

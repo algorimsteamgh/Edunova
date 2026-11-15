@@ -3,7 +3,7 @@ import { adminService } from './service.js';
 export class AdminController {
   async getStats(req, res, next) {
     try {
-      const stats = adminService.getStats(req.user);
+      const stats = await adminService.getStats(req.user);
       res.status(200).json({
         success: true,
         data: { stats },
@@ -15,7 +15,7 @@ export class AdminController {
 
   async listUsers(req, res, next) {
     try {
-      const result = adminService.listUsers(req.user, req.query);
+      const result = await adminService.listUsers(req.user, req.query);
       res.status(200).json({
         success: true,
         data: result.users,
@@ -28,7 +28,7 @@ export class AdminController {
 
   async getEnrollmentsReport(req, res, next) {
     try {
-      const result = adminService.getEnrollmentsReport(req.user, req.query);
+      const result = await adminService.getEnrollmentsReport(req.user, req.query);
       res.status(200).json({
         success: true,
         data: result.report,
@@ -41,7 +41,7 @@ export class AdminController {
 
   async getCompletionsReport(req, res, next) {
     try {
-      const result = adminService.getCompletionsReport(req.user, req.query);
+      const result = await adminService.getCompletionsReport(req.user, req.query);
       res.status(200).json({
         success: true,
         data: result.report,
@@ -54,7 +54,7 @@ export class AdminController {
 
   async getProgressDetails(req, res, next) {
     try {
-      const details = adminService.getProgressDetailsReport(req.user, req.params.enrollmentId);
+      const details = await adminService.getProgressDetailsReport(req.user, req.params.enrollmentId);
       res.status(200).json({
         success: true,
         data: { details },
@@ -66,7 +66,7 @@ export class AdminController {
 
   async getHealthSummary(req, res, next) {
     try {
-      const summary = adminService.getHealthSummary(req.user);
+      const summary = await adminService.getHealthSummary(req.user);
       res.status(200).json({
         success: true,
         data: summary,
@@ -78,7 +78,7 @@ export class AdminController {
 
   async exportEnrollmentsCsv(req, res, next) {
     try {
-      const csvData = adminService.exportEnrollmentsCsv(req.user, req.query);
+      const csvData = await adminService.exportEnrollmentsCsv(req.user, req.query);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename="enrollments-report.csv"');
       res.status(200).send(csvData);
@@ -89,7 +89,7 @@ export class AdminController {
 
   async exportCompletionsCsv(req, res, next) {
     try {
-      const csvData = adminService.exportCompletionsCsv(req.user, req.query);
+      const csvData = await adminService.exportCompletionsCsv(req.user, req.query);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename="completions-report.csv"');
       res.status(200).send(csvData);

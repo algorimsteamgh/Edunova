@@ -20,14 +20,14 @@ const OLD_DEFAULT_SECRET = 'learnsphere-super-secure-jwt-signing-secret-key-2026
 function startServer(env) {
   return spawnSync(process.execPath, ['src/server.js'], {
     cwd: path.resolve(__dirname, '..'),
-    env: { PATH: process.env.PATH, DATABASE_PATH: ':memory:', LOG_LEVEL: 'fatal', ...env },
+    env: { PATH: process.env.PATH, LOG_LEVEL: 'fatal', ...env },
     timeout: 15000,
     encoding: 'utf8',
   });
 }
 
 describe('Production configuration guards', () => {
-  const prod = { env: 'production', jwtSecret: STRONG_SECRET, onCloudRun: false, litestreamBucket: '', allowEphemeralDb: false };
+  const prod = { env: 'production', jwtSecret: STRONG_SECRET, dbConfigured: true };
 
   it('accepts a strong, unpublished secret', () => {
     expect(getConfigErrors(prod)).toEqual([]);
@@ -39,10 +39,8 @@ describe('Production configuration guards', () => {
     expect(getConfigErrors({ ...prod, jwtSecret: OLD_DEFAULT_SECRET })[0]).toMatch(/published/);
   });
 
-  it('rejects Cloud Run without durable storage unless explicitly allowed', () => {
-    expect(getConfigErrors({ ...prod, onCloudRun: true })[0]).toMatch(/LITESTREAM_BUCKET/);
-    expect(getConfigErrors({ ...prod, onCloudRun: true, litestreamBucket: 'b' })).toEqual([]);
-    expect(getConfigErrors({ ...prod, onCloudRun: true, allowEphemeralDb: true })).toEqual([]);
+  it('refuses to start in production without a database configured', () => {
+    expect(getConfigErrors({ ...prod, dbConfigured: false })[0]).toMatch(/No database configured/);
   });
 
   it('does not apply production rules outside production', () => {
@@ -55,10 +53,10 @@ describe('Production configuration guards', () => {
     expect(result.stdout).toMatch(/JWT_SECRET is required/);
   });
 
-  it('server exits on Cloud Run without durable storage', () => {
-    const result = startServer({ NODE_ENV: 'production', JWT_SECRET: STRONG_SECRET, K_SERVICE: 'learnsphere-backend' });
+  it('server exits in production without a database configured', () => {
+    const result = startServer({ NODE_ENV: 'production', JWT_SECRET: STRONG_SECRET });
     expect(result.status).toBe(1);
-    expect(result.stdout).toMatch(/LITESTREAM_BUCKET/);
+    expect(result.stdout).toMatch(/No database configured/);
   });
 });
 
@@ -72,8 +70,8 @@ describe('Token forgery', () => {
     db = env.db;
   });
 
-  afterAll(() => {
-    teardownTestEnvironment();
+  afterAll(async () => {
+    await teardownTestEnvironment();
   });
 
   it('rejects an admin token signed with the old published default secret', async () => {
@@ -112,13 +110,13 @@ describe('Token forgery', () => {
     it('only bootstraps when no active admin exists', async () => {
       const result = await ensureAdminAccount(db, { adminEmail: 'second@example.com', adminPassword: 'Correct-Horse-42-Battery' });
       expect(result).toBeNull();
-      expect(db.prepare("SELECT 1 FROM users WHERE email = 'second@example.com'").get()).toBeUndefined();
+      expect(await await db.prepare("SELECT 1 FROM users WHERE email = 'second@example.com'").get()).toBeUndefined();
     });
 
     it('deactivates demo accounts that still use their published password', async () => {
       const now = new Date().toISOString();
       const demoHash = await bcrypt.hash('TeacherPass123!', 4);
-      db.prepare(`
+      await db.prepare(`
         INSERT INTO users (id, full_name, email, password_hash, role, is_active, created_at, updated_at)
         VALUES ('u-inst-01', 'Prof. Elena Rostova', 'elena.rostova@learnsphere.io', ?, 'admin', 1, ?, ?)
       `).run(demoHash, now, now);
@@ -127,8 +125,8 @@ describe('Token forgery', () => {
 
       // The test admin shares the demo email but not the published password, so it stays active.
       expect(disabled).toEqual(['elena.rostova@learnsphere.io']);
-      expect(db.prepare("SELECT is_active FROM users WHERE id = 'u-inst-01'").get().is_active).toBe(0);
-      expect(db.prepare("SELECT is_active FROM users WHERE id = 'user-admin'").get().is_active).toBe(1);
+      expect((await await db.prepare("SELECT is_active FROM users WHERE id = 'u-inst-01'").get()).is_active).toBe(0);
+      expect((await await db.prepare("SELECT is_active FROM users WHERE id = 'user-admin'").get()).is_active).toBe(1);
 
       const login = await request(app)
         .post('/api/v1/auth/login')
@@ -141,7 +139,7 @@ describe('Token forgery', () => {
       config.seedDemoData = false;
       try {
         await expect(seedDatabase(db)).rejects.toThrow(/Demo seeding is disabled/);
-        expect(db.prepare('SELECT COUNT(*) AS c FROM courses').get().c).toBeGreaterThan(0);
+        expect((await await db.prepare('SELECT COUNT(*) AS c FROM courses').get()).c).toBeGreaterThan(0);
       } finally {
         config.seedDemoData = previous;
       }

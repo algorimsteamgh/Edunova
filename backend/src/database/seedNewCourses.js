@@ -2528,13 +2528,15 @@ Kanban visualizes workflow, limits work-in-progress (WIP), and maximizes operati
   }
 ];
 
-export function seedNewCourses(customDb = null) {
-  const db = customDb || getDatabase();
+export async function seedNewCourses(customDb = null) {
+  const pool = customDb || getDatabase();
+  // Everything, including the prepared statements, runs on the transaction's connection.
+  return pool.transaction(async (db) => {
   const now = new Date().toISOString();
 
   // Find default instructor ID
   let instructorId = 'u-inst-01';
-  const instructorRow = db.prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1").get();
+  const instructorRow = await db.prepare("SELECT id FROM users WHERE role = 'admin' LIMIT 1").get();
   if (instructorRow && instructorRow.id) {
     instructorId = instructorRow.id;
   }
@@ -2592,9 +2594,9 @@ export function seedNewCourses(customDb = null) {
   let coursesAdded = 0;
   let lessonsAdded = 0;
 
-  const transaction = db.transaction(() => {
+  {
     for (const course of NEW_COURSES_DATA) {
-      insertCourse.run(
+      await insertCourse.run(
         course.id,
         course.title,
         course.description,
@@ -2612,7 +2614,7 @@ export function seedNewCourses(customDb = null) {
       coursesAdded++;
 
       for (const lesson of course.lessons) {
-        insertLesson.run(
+        await insertLesson.run(
           lesson.id,
           course.id,
           lesson.title,
@@ -2635,22 +2637,22 @@ export function seedNewCourses(customDb = null) {
         lessonsAdded++;
       }
     }
-  });
-
-  transaction();
+  }
 
   logger.info({ coursesAdded, lessonsAdded }, 'Successfully seeded all new courses and topic/subtopic lessons');
   return { coursesAdded, lessonsAdded };
+  });
 }
 
 // Allow CLI execution: `node src/database/seedNewCourses.js`
 if (process.argv[1] && process.argv[1].endsWith('seedNewCourses.js')) {
-  try {
-    const stats = seedNewCourses();
-    console.log(`[SeedNewCourses] Added/Updated ${stats.coursesAdded} courses and ${stats.lessonsAdded} lessons successfully.`);
-    process.exit(0);
-  } catch (err) {
-    console.error('[SeedNewCourses] Seeding error:', err);
-    process.exit(1);
-  }
+  seedNewCourses()
+    .then((stats) => {
+      console.log(`[SeedNewCourses] Added/Updated ${stats.coursesAdded} courses and ${stats.lessonsAdded} lessons successfully.`);
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('[SeedNewCourses] Seeding error:', err);
+      process.exit(1);
+    });
 }

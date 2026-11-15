@@ -7,11 +7,11 @@ import { getDatabase } from '../../database/index.js';
 import { extractYouTubeVideoId, getYouTubeEmbedUrl } from '../../utils/youtube.js';
 
 export class CourseService {
-  listCourses(currentUser, query) {
+  async listCourses(currentUser, query) {
     const isAdmin = currentUser && currentUser.role === 'admin';
     const effectiveStatus = isAdmin ? query.status : 'published';
 
-    const result = courseRepository.listCourses({
+    const result = await courseRepository.listCourses({
       ...query,
       status: effectiveStatus,
     });
@@ -29,8 +29,8 @@ export class CourseService {
     };
   }
 
-  getCourseDetails(currentUser, id) {
-    const course = courseRepository.findById(id);
+  async getCourseDetails(currentUser, id) {
+    const course = await courseRepository.findById(id);
     if (!course) {
       throw new NotFoundError('Course not found');
     }
@@ -46,12 +46,12 @@ export class CourseService {
     const db = getDatabase();
 
     if (currentUser) {
-      userEnrollment = db
+      userEnrollment = await db
         .prepare('SELECT id, status, enrolled_at FROM enrollments WHERE student_id = ? AND course_id = ?')
         .get(currentUser.id, id);
 
       if (userEnrollment) {
-        const completedRows = db
+        const completedRows = await db
           .prepare('SELECT lesson_id FROM lesson_progress WHERE enrollment_id = ? AND is_completed = 1')
           .all(userEnrollment.id);
         completedLessonIds = new Set(completedRows.map((r) => r.lesson_id));
@@ -63,7 +63,7 @@ export class CourseService {
       ? 'SELECT id, title, position, status, video_id, video_url, duration, description, channel_name, is_preview, topic_title, subtopic_title, practical_exercise, reference_urls, created_at FROM lessons WHERE course_id = ? ORDER BY position ASC'
       : "SELECT id, title, position, status, video_id, video_url, duration, description, channel_name, is_preview, topic_title, subtopic_title, practical_exercise, reference_urls, created_at FROM lessons WHERE course_id = ? AND status = 'published' ORDER BY position ASC";
 
-    const rawLessons = db.prepare(lessonQuery).all(id);
+    const rawLessons = await db.prepare(lessonQuery).all(id);
     const lessons = rawLessons.map((l) => ({
       ...l,
       topic_title: l.topic_title || '',
@@ -98,7 +98,7 @@ export class CourseService {
     };
   }
 
-  createCourse(currentUser, data) {
+  async createCourse(currentUser, data) {
     if (!currentUser || currentUser.role !== 'admin') {
       throw new ForbiddenError('Only administrators can create courses');
     }
@@ -115,7 +115,7 @@ export class CourseService {
       if (extracted) previewVideoId = extracted;
     }
 
-    const course = courseRepository.createCourse({
+    const course = await courseRepository.createCourse({
       id,
       title: data.title,
       description: data.description || '',
@@ -131,19 +131,19 @@ export class CourseService {
       updatedAt: now,
     });
 
-    logAuditEvent(currentUser.id, 'COURSE_CREATED', 'course', id, { title: course.title, status: course.status });
+    await logAuditEvent(currentUser.id, 'COURSE_CREATED', 'course', id, { title: course.title, status: course.status });
     return {
       ...course,
       preview_embed_url: course.preview_video_id ? getYouTubeEmbedUrl(course.preview_video_id) : '',
     };
   }
 
-  updateCourse(currentUser, id, data) {
+  async updateCourse(currentUser, id, data) {
     if (!currentUser || currentUser.role !== 'admin') {
       throw new ForbiddenError('Only administrators can update courses');
     }
 
-    const existing = courseRepository.findById(id);
+    const existing = await courseRepository.findById(id);
     if (!existing) {
       throw new NotFoundError('Course not found');
     }
@@ -168,29 +168,29 @@ export class CourseService {
       }
     }
 
-    const updated = courseRepository.updateCourse(id, fieldsToUpdate);
-    logAuditEvent(currentUser.id, 'COURSE_UPDATED', 'course', id, fieldsToUpdate);
+    const updated = await courseRepository.updateCourse(id, fieldsToUpdate);
+    await logAuditEvent(currentUser.id, 'COURSE_UPDATED', 'course', id, fieldsToUpdate);
     return {
       ...updated,
       preview_embed_url: updated.preview_video_id ? getYouTubeEmbedUrl(updated.preview_video_id) : '',
     };
   }
 
-  deleteOrArchiveCourse(currentUser, id) {
+  async deleteOrArchiveCourse(currentUser, id) {
     if (!currentUser || currentUser.role !== 'admin') {
       throw new ForbiddenError('Only administrators can delete or archive courses');
     }
 
-    const course = courseRepository.findById(id);
+    const course = await courseRepository.findById(id);
     if (!course) {
       throw new NotFoundError('Course not found');
     }
 
-    const enrollmentCount = courseRepository.countEnrollments(id);
+    const enrollmentCount = await courseRepository.countEnrollments(id);
     if (enrollmentCount > 0) {
       // Must not break historical student records: archive instead of hard delete
-      const updated = courseRepository.updateCourse(id, { status: 'archived' });
-      logAuditEvent(currentUser.id, 'COURSE_ARCHIVED', 'course', id, { reason: 'Active or past student enrollments exist' });
+      const updated = await courseRepository.updateCourse(id, { status: 'archived' });
+      await logAuditEvent(currentUser.id, 'COURSE_ARCHIVED', 'course', id, { reason: 'Active or past student enrollments exist' });
       return {
         action: 'archived',
         message: 'Course has historical student enrollments and was safely archived rather than deleted.',
@@ -198,16 +198,16 @@ export class CourseService {
       };
     }
 
-    courseRepository.deleteCourse(id);
-    logAuditEvent(currentUser.id, 'COURSE_DELETED', 'course', id, { title: course.title });
+    await courseRepository.deleteCourse(id);
+    await logAuditEvent(currentUser.id, 'COURSE_DELETED', 'course', id, { title: course.title });
     return {
       action: 'deleted',
       message: 'Course deleted permanently.',
     };
   }
 
-  getCategories() {
-    return courseRepository.listCategories();
+  async getCategories() {
+    return await courseRepository.listCategories();
   }
 }
 

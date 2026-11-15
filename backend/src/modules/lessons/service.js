@@ -7,8 +7,8 @@ import { getDatabase } from '../../database/index.js';
 import { extractYouTubeVideoId, normalizeYouTubeUrl, getYouTubeEmbedUrl } from '../../utils/youtube.js';
 
 export class LessonService {
-  listLessons(currentUser, courseId) {
-    const course = courseRepository.findById(courseId);
+  async listLessons(currentUser, courseId) {
+    const course = await courseRepository.findById(courseId);
     if (!course) {
       throw new NotFoundError('Course not found');
     }
@@ -18,20 +18,20 @@ export class LessonService {
       throw new NotFoundError('Course not found');
     }
 
-    const lessons = lessonRepository.findByCourseId(courseId, isAdmin);
+    const lessons = await lessonRepository.findByCourseId(courseId, isAdmin);
     return lessons.map((l) => ({
       ...l,
       embed_url: l.video_id ? getYouTubeEmbedUrl(l.video_id) : '',
     }));
   }
 
-  getLesson(currentUser, lessonId) {
-    const lesson = lessonRepository.findById(lessonId);
+  async getLesson(currentUser, lessonId) {
+    const lesson = await lessonRepository.findById(lessonId);
     if (!lesson) {
       throw new NotFoundError('Lesson not found');
     }
 
-    const course = courseRepository.findById(lesson.course_id);
+    const course = await courseRepository.findById(lesson.course_id);
     if (!course) {
       throw new NotFoundError('Associated course not found');
     }
@@ -51,14 +51,14 @@ export class LessonService {
     if (!isAdmin) {
       if (currentUser) {
         const db = getDatabase();
-        enrollment = db
+        enrollment = await db
           .prepare(
             "SELECT id, status FROM enrollments WHERE student_id = ? AND course_id = ? AND status IN ('active', 'completed')"
           )
           .get(currentUser.id, lesson.course_id);
 
         if (enrollment) {
-          const progressRow = db
+          const progressRow = await db
             .prepare('SELECT is_completed FROM lesson_progress WHERE enrollment_id = ? AND lesson_id = ?')
             .get(enrollment.id, lesson.id);
 
@@ -76,12 +76,12 @@ export class LessonService {
     } else if (currentUser) {
       // If admin, check if admin has test enrollment
       const db = getDatabase();
-      enrollment = db
+      enrollment = await db
         .prepare('SELECT id, status FROM enrollments WHERE student_id = ? AND course_id = ?')
         .get(currentUser.id, lesson.course_id);
 
       if (enrollment) {
-        const progressRow = db
+        const progressRow = await db
           .prepare('SELECT is_completed FROM lesson_progress WHERE enrollment_id = ? AND lesson_id = ?')
           .get(enrollment.id, lesson.id);
         isCompleted = progressRow ? Boolean(progressRow.is_completed) : false;
@@ -89,7 +89,7 @@ export class LessonService {
     }
 
     // Determine adjacent navigation (prev / next)
-    const siblings = lessonRepository.findByCourseId(lesson.course_id, isAdmin);
+    const siblings = await lessonRepository.findByCourseId(lesson.course_id, isAdmin);
     const currentIndex = siblings.findIndex((l) => l.id === lesson.id);
     const prevLesson = currentIndex > 0 ? siblings[currentIndex - 1] : null;
     const nextLesson = currentIndex >= 0 && currentIndex < siblings.length - 1 ? siblings[currentIndex + 1] : null;
@@ -127,19 +127,19 @@ export class LessonService {
     };
   }
 
-  createLesson(currentUser, courseId, data) {
+  async createLesson(currentUser, courseId, data) {
     if (!currentUser || currentUser.role !== 'admin') {
       throw new ForbiddenError('Only administrators can create lessons');
     }
 
-    const course = courseRepository.findById(courseId);
+    const course = await courseRepository.findById(courseId);
     if (!course) {
       throw new NotFoundError('Course not found');
     }
 
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
-    const position = data.position || lessonRepository.getMaxPosition(courseId) + 1;
+    const position = data.position || await lessonRepository.getMaxPosition(courseId) + 1;
 
     let videoId = data.videoId || '';
     let videoUrl = data.videoUrl || '';
@@ -158,7 +158,7 @@ export class LessonService {
       }
     }
 
-    const lesson = lessonRepository.createLesson({
+    const lesson = await lessonRepository.createLesson({
       id,
       courseId,
       title: data.title,
@@ -179,19 +179,19 @@ export class LessonService {
       updatedAt: now,
     });
 
-    logAuditEvent(currentUser.id, 'LESSON_CREATED', 'lesson', id, { courseId, title: lesson.title, videoId });
+    await logAuditEvent(currentUser.id, 'LESSON_CREATED', 'lesson', id, { courseId, title: lesson.title, videoId });
     return {
       ...lesson,
       embed_url: lesson.video_id ? getYouTubeEmbedUrl(lesson.video_id) : '',
     };
   }
 
-  updateLesson(currentUser, id, data) {
+  async updateLesson(currentUser, id, data) {
     if (!currentUser || currentUser.role !== 'admin') {
       throw new ForbiddenError('Only administrators can update lessons');
     }
 
-    const existing = lessonRepository.findById(id);
+    const existing = await lessonRepository.findById(id);
     if (!existing) {
       throw new NotFoundError('Lesson not found');
     }
@@ -227,26 +227,26 @@ export class LessonService {
       }
     }
 
-    const updated = lessonRepository.updateLesson(id, fieldsToUpdate);
-    logAuditEvent(currentUser.id, 'LESSON_UPDATED', 'lesson', id, fieldsToUpdate);
+    const updated = await lessonRepository.updateLesson(id, fieldsToUpdate);
+    await logAuditEvent(currentUser.id, 'LESSON_UPDATED', 'lesson', id, fieldsToUpdate);
     return {
       ...updated,
       embed_url: updated.video_id ? getYouTubeEmbedUrl(updated.video_id) : '',
     };
   }
 
-  deleteLesson(currentUser, id) {
+  async deleteLesson(currentUser, id) {
     if (!currentUser || currentUser.role !== 'admin') {
       throw new ForbiddenError('Only administrators can delete lessons');
     }
 
-    const existing = lessonRepository.findById(id);
+    const existing = await lessonRepository.findById(id);
     if (!existing) {
       throw new NotFoundError('Lesson not found');
     }
 
-    lessonRepository.deleteLesson(id);
-    logAuditEvent(currentUser.id, 'LESSON_DELETED', 'lesson', id, { title: existing.title, courseId: existing.course_id });
+    await lessonRepository.deleteLesson(id);
+    await logAuditEvent(currentUser.id, 'LESSON_DELETED', 'lesson', id, { title: existing.title, courseId: existing.course_id });
     return { success: true, message: 'Lesson deleted successfully.' };
   }
 }

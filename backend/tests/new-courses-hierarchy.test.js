@@ -15,15 +15,15 @@ describe('New Technical Domain Courses & Hierarchy Integration', () => {
     db = env.db;
 
     // Seed the 12 modern domain courses
-    seedNewCourses(db);
+    await seedNewCourses(db);
   });
 
   afterAll(async () => {
     await teardownTestEnvironment();
   });
 
-  it('should have seeded all 12 unique new domain courses', () => {
-    const courses = db.prepare("SELECT id, title, category, difficulty_level, estimated_duration FROM courses WHERE id LIKE 'c-%'").all();
+  it('should have seeded all 12 unique new domain courses', async () => {
+    const courses = await db.prepare("SELECT id, title, category, difficulty_level, estimated_duration FROM courses WHERE id LIKE 'c-%'").all();
     expect(courses.length).toBeGreaterThanOrEqual(12);
 
     const expectedCourseIds = NEW_COURSES_DATA.map((c) => c.id);

@@ -26,8 +26,8 @@ describe('Scenarios 5, 6 & 7: Progress Tracking & Cross-Course Safety', () => {
     peerEnrollmentId = enrollRes2.body.data.enrollment.id;
   });
 
-  afterAll(() => {
-    teardownTestEnvironment();
+  afterAll(async () => {
+    await teardownTestEnvironment();
   });
 
   it('Scenario 5: student cannot modify another student’s progress (HTTP 403 Forbidden)', async () => {

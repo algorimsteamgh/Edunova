@@ -8,9 +8,9 @@ export function errorHandler(err, req, res, _next) {
   const code = isAppError ? err.code : 'INTERNAL_SERVER_ERROR';
   const message = isAppError || config.env !== 'production' ? err.message : 'An unexpected internal error occurred';
 
-  // Handle SQLite specific errors if uncaught
-  if (err.name === 'SqliteError') {
-    if (err.message.includes('FOREIGN KEY constraint failed')) {
+  // Handle PostgreSQL constraint errors if uncaught (23503 foreign key, 23505 unique)
+  if (typeof err.code === 'string' && /^23\d{3}$/.test(err.code)) {
+    if (err.code === '23503') {
       return res.status(400).json({
         type: 'https://learnsphere.io/errors/foreign-key-violation',
         title: 'Foreign Key Violation',
@@ -20,7 +20,7 @@ export function errorHandler(err, req, res, _next) {
         timestamp: new Date().toISOString(),
       });
     }
-    if (err.message.includes('UNIQUE constraint failed')) {
+    if (err.code === '23505') {
       return res.status(409).json({
         type: 'https://learnsphere.io/errors/unique-constraint-violation',
         title: 'Unique Constraint Violation',

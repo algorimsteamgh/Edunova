@@ -18,7 +18,7 @@ async function startServer() {
 
     // 1. Initialize DB and apply migrations
     const db = getDatabase();
-    runMigrations(db);
+    await runMigrations(db);
 
     // 2. Accounts: never leave published demo passwords live, never create an admin with a default password
     if (!config.seedDemoData) {
@@ -27,16 +27,16 @@ async function startServer() {
     await ensureAdminAccount(db);
 
     // 3. Seed an empty database: demo users + catalog outside production, catalog only in production
-    const courseCount = db.prepare('SELECT COUNT(*) as count FROM courses').get().count;
+    const courseCount = (await db.prepare('SELECT COUNT(*) as count FROM courses').get()).count;
     if (courseCount === 0) {
       if (config.seedDemoData) {
         logger.info('Database courses table is empty; seeding demo users, courses and lessons...');
         const { seedDatabase } = await import('./database/seed.js');
         await seedDatabase(db);
-      } else if (db.prepare("SELECT 1 FROM users WHERE role = 'admin' AND is_active = 1").get()) {
+      } else if (await db.prepare("SELECT 1 FROM users WHERE role = 'admin' AND is_active = 1").get()) {
         logger.info('Database courses table is empty; seeding the course catalog (no demo accounts)...');
         const { seedNewCourses } = await import('./database/seedNewCourses.js');
-        seedNewCourses(db);
+        await seedNewCourses(db);
       } else {
         logger.warn('Database courses table is empty and no admin exists; skipping catalog seed');
       }
@@ -55,8 +55,7 @@ async function startServer() {
       logger.info({ signal }, 'Termination signal received; shutting down gracefully');
       server.close(() => {
         logger.info('HTTP server closed');
-        closeDatabase();
-        process.exit(0);
+        closeDatabase().finally(() => process.exit(0));
       });
 
       // Force exit if hanging

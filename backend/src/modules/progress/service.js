@@ -7,8 +7,8 @@ import { getDatabase } from '../../database/index.js';
 import { logAuditEvent } from '../../utils/auditLogger.js';
 
 export class ProgressService {
-  updateLessonProgress(currentUser, enrollmentId, lessonId, isCompleted) {
-    const enrollment = enrollmentRepository.findById(enrollmentId);
+  async updateLessonProgress(currentUser, enrollmentId, lessonId, isCompleted) {
+    const enrollment = await enrollmentRepository.findById(enrollmentId);
     if (!enrollment) {
       throw new NotFoundError('Enrollment record not found');
     }
@@ -19,7 +19,7 @@ export class ProgressService {
       throw new ForbiddenError('You cannot modify progress for another student’s enrollment');
     }
 
-    const lesson = lessonRepository.findById(lessonId);
+    const lesson = await lessonRepository.findById(lessonId);
     if (!lesson) {
       throw new NotFoundError('Lesson not found');
     }
@@ -38,10 +38,10 @@ export class ProgressService {
     const now = new Date().toISOString();
     const completedAt = isCompleted ? now : null;
 
-    const progressTx = db.transaction(() => {
+    return db.transaction(async () => {
       // 1. Upsert progress record
       const id = crypto.randomUUID();
-      const progressRecord = progressRepository.upsertLessonProgress({
+      const progressRecord = await progressRepository.upsertLessonProgress({
         id,
         enrollmentId,
         lessonId,
@@ -51,8 +51,8 @@ export class ProgressService {
       });
 
       // 2. Compute updated course progress
-      const totalPublished = progressRepository.countPublishedLessons(enrollment.course_id);
-      const totalCompleted = progressRepository.countCompletedLessons(enrollmentId, enrollment.course_id);
+      const totalPublished = await progressRepository.countPublishedLessons(enrollment.course_id);
+      const totalCompleted = await progressRepository.countCompletedLessons(enrollmentId, enrollment.course_id);
 
       const progressPercentage = totalPublished > 0 ? Math.floor((totalCompleted / totalPublished) * 100) : 0;
 
@@ -60,18 +60,18 @@ export class ProgressService {
       let newEnrollmentStatus = enrollment.status;
       if (totalPublished > 0 && totalCompleted === totalPublished) {
         newEnrollmentStatus = 'completed';
-        enrollmentRepository.updateStatus(enrollmentId, 'completed');
-        logAuditEvent(currentUser.id, 'COURSE_COMPLETED', 'enrollment', enrollmentId, {
+        await enrollmentRepository.updateStatus(enrollmentId, 'completed');
+        await logAuditEvent(currentUser.id, 'COURSE_COMPLETED', 'enrollment', enrollmentId, {
           courseId: enrollment.course_id,
           completedLessons: totalCompleted,
         });
       } else if (enrollment.status === 'completed' && totalCompleted < totalPublished) {
         // If previously completed but lesson uncompleted, transition back to active
         newEnrollmentStatus = 'active';
-        enrollmentRepository.updateStatus(enrollmentId, 'active');
+        await enrollmentRepository.updateStatus(enrollmentId, 'active');
       }
 
-      logAuditEvent(currentUser.id, 'PROGRESS_UPDATED', 'lesson_progress', progressRecord.id, {
+      await logAuditEvent(currentUser.id, 'PROGRESS_UPDATED', 'lesson_progress', progressRecord.id, {
         enrollmentId,
         lessonId,
         isCompleted,
@@ -87,11 +87,10 @@ export class ProgressService {
       };
     });
 
-    return progressTx();
   }
 
-  getProgress(currentUser, enrollmentId) {
-    const enrollment = enrollmentRepository.findById(enrollmentId);
+  async getProgress(currentUser, enrollmentId) {
+    const enrollment = await enrollmentRepository.findById(enrollmentId);
     if (!enrollment) {
       throw new NotFoundError('Enrollment record not found');
     }
@@ -101,7 +100,7 @@ export class ProgressService {
       throw new ForbiddenError('You cannot view progress for another student’s enrollment');
     }
 
-    const summary = progressRepository.getProgressSummary(enrollmentId);
+    const summary = await progressRepository.getProgressSummary(enrollmentId);
     const total = summary ? summary.total_lessons || 0 : 0;
     const completed = summary ? summary.completed_lessons || 0 : 0;
     const progressPercentage = total > 0 ? Math.floor((completed / total) * 100) : 0;

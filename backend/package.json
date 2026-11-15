@@ -10,15 +10,13 @@
     "migrate": "node src/database/migrator.js",
     "seed": "node src/database/seed.js",
     "seed:admin": "node src/database/seed-admin.js",
-    "db:integrity": "node -e \"import('./src/database/index.js').then(m => m.runIntegrityCheck())\"",
-    "db:backup": "node -e \"import('./src/database/index.js').then(m => m.createBackup())\"",
+    "db:integrity": "node -e \"import('./src/database/index.js').then(async m => { const r = await m.runIntegrityCheck(); await m.closeDatabase(); process.exit(r.integrityOk && r.fkOk ? 0 : 1); })\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "echo 'Backend linting passed'"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "better-sqlite3": "^11.8.1",
     "cors": "^2.8.5",
     "csv-stringify": "^6.5.2",
     "dotenv": "^16.4.7",
@@ -26,6 +24,7 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
+    "pg": "^8.23.1",
     "pino": "^9.6.0",
     "pino-http": "^10.4.0",
     "zod": "^3.24.2"

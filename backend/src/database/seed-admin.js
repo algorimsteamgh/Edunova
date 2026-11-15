@@ -1,4 +1,4 @@
-import { getDatabase } from './index.js';
+import { getDatabase, closeDatabase } from './index.js';
 import { runMigrations } from './migrator.js';
 import { bootstrapAdmin } from './bootstrap.js';
 
@@ -6,7 +6,7 @@ import { bootstrapAdmin } from './bootstrap.js';
 // Creates the admin, or promotes an existing account and resets its password. There is no default password.
 async function main() {
   const db = getDatabase();
-  runMigrations(db);
+  await runMigrations(db);
 
   const result = await bootstrapAdmin(db, {
     email: process.env.ADMIN_EMAIL,
@@ -19,6 +19,7 @@ async function main() {
   } else {
     console.log(`[Admin Bootstrap] Created primary administrator '${result.email}' (ID: ${result.id}).`);
   }
+  await closeDatabase();
   process.exit(0);
 }
 
