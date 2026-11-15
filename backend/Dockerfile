@@ -23,6 +23,8 @@ ENV PORT=8080
 # Amazon RDS certificate bundle, so PGSSLMODE=verify-full can check the database's certificate
 ADD --chmod=644 https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /app/certs/rds-global-bundle.pem
 ENV PGSSLROOTCERT=/app/certs/rds-global-bundle.pem
+# ADD from a URL can leave the file and its folder unreadable for the non-root user
+RUN chmod 755 /app/certs && chmod 644 /app/certs/rds-global-bundle.pem
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./
