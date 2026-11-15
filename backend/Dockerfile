@@ -15,6 +15,9 @@ FROM node:22-alpine AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
+
+# Pick up Alpine security fixes released after the base image was built (e.g. zlib CVE-2026-4738)
+RUN apk upgrade --no-cache
 ENV PORT=8080
 
 # Amazon RDS certificate bundle, so PGSSLMODE=verify-full can check the database's certificate
